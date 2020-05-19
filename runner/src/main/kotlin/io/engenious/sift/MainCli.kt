@@ -8,8 +8,8 @@ import java.io.File
 
 fun main(args: Array<String>) {
     val parser = ArgParser("sift")
-    val command by parser.argument(
-            ArgType.Choice(listOf("run")),
+    val command: Command by parser.argument(
+            EnumArgChoice.enumArgChoice(),
             description = "Command to execute"
     )
     val configPath by parser.option(
@@ -22,5 +22,17 @@ fun main(args: Array<String>) {
     parser.parse(args)
 
     val config = File(configPath)
-    Sift(config).run()
+    val sift = Sift(config)
+
+    consume(when (command) {
+        Command.LIST -> sift.list()
+        Command.RUN -> sift.run()
+    })
 }
+
+enum class Command {
+    LIST,
+    RUN
+}
+
+private fun consume(unused: Any) {}

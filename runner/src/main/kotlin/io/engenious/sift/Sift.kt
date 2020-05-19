@@ -9,18 +9,27 @@ import java.io.IOException
 import java.lang.RuntimeException
 
 class Sift(private val configFile: File) {
+    fun list() {
+        val config = config()
+
+        val tongsConfiguration = Configuration.aConfigurationBuilder()
+                .setupCommonTongsConfiguration(config)
+                .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
+                .build()
+        // TODO: hide Tongs log
+        Tongs(tongsConfiguration).run()
+
+        ListingPlugin.collectedTests
+                .forEach {
+                    println("${it.clazz}#${it.method}")
+                }
+    }
+
     fun run() {
         val config = config()
 
         val tongsConfiguration = Configuration.aConfigurationBuilder()
-                .withOutput(File(config.outputDirectoryPath))
-                .withAndroidSdk(File(config.androidSdkPath))
-                .withApplicationApk(File(config.applicationPackage))
-                .withInstrumentationApk(File(config.testApplicationPackage))
-                .withRetryPerTestCaseQuota(config.rerunFailedTest)
-                .withTotalAllowedRetryQuota(Int.MAX_VALUE)
-                .withCoverageEnabled(false)
-                .withDdmTermination(true)
+                .setupCommonTongsConfiguration(config)
                 .build()
         /*
         TODO:
@@ -31,7 +40,20 @@ class Sift(private val configFile: File) {
          - tearDownScriptPath
          */
 
+        // TODO: hide Tongs log
         Tongs(tongsConfiguration).run()
+        // TODO: exit code
+    }
+
+    private fun Configuration.Builder.setupCommonTongsConfiguration(config: Config): Configuration.Builder {
+        return withOutput(File(config.outputDirectoryPath))
+                .withAndroidSdk(File(config.androidSdkPath))
+                .withApplicationApk(File(config.applicationPackage))
+                .withInstrumentationApk(File(config.testApplicationPackage))
+                .withRetryPerTestCaseQuota(config.rerunFailedTest)
+                .withTotalAllowedRetryQuota(Int.MAX_VALUE)
+                .withCoverageEnabled(false)
+                .withDdmTermination(true)
     }
 
     private fun config(): Config {

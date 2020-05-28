@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
     val config = File(configPath)
     val sift = Sift(config)
 
-    consume(when (command) {
+    exhaustive(when (command) {
         Command.LIST -> sift.list()
         Command.RUN -> sift.run()
     })
@@ -35,4 +35,4 @@ enum class Command {
     RUN
 }
 
-private fun consume(unused: Any) {}
+private fun exhaustive(unused: Any) {}

@@ -1,8 +1,8 @@
 package io.engenious.sift
 
-import com.github.tarcv.tongs.model.Device
-import com.github.tarcv.tongs.model.TestCaseEvent
-import com.github.tarcv.tongs.runner.rules.TestCaseRule
+import com.github.tarcv.tongs.api.devices.Device
+import com.github.tarcv.tongs.api.run.TestCaseEvent
+import com.github.tarcv.tongs.api.testcases.TestCaseRule
 
 class CollectingTestCaseRule(private val noOpDevices: List<Device> = emptyList()): TestCaseRule {
     private val _testCases = HashSet<TestIdentifier>()
@@ -17,10 +17,13 @@ class CollectingTestCaseRule(private val noOpDevices: List<Device> = emptyList()
             testCaseEvent
         } else {
             TestCaseEvent.newTestCase(
-                    testCaseEvent.testMethod,
-                    testCaseEvent.testClass,
+                    testCaseEvent.testCase.typeTag,
+                    testCaseEvent.testCase.testMethod,
+                    testCaseEvent.testCase.testClass,
                     testCaseEvent.testCase.properties,
                     testCaseEvent.testCase.annotations,
+                    testCaseEvent.testCase.extra,
+                    testCaseEvent.includedDevices,
                     testCaseEvent.excludedDevices + noOpDevices,
                     testCaseEvent.totalFailureCount
             )

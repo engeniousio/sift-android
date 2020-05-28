@@ -1,4 +1,8 @@
 {
+  "token": "<TOKEN>",
+  "testPlan": "<TEST PLAN>",
+  "status": "enabled",
+
   "androidSdkPath": "<SDK PATH>",
   "applicationPackage": "<APK PATH>",
   "testApplicationPackage": "<TEST APK PATH>",

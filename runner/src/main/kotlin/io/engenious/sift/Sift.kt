@@ -21,15 +21,19 @@ class Sift(private val configFile: File) {
 
         ListingPlugin.collectedTests
                 .forEach {
-                    println("${it.clazz}#${it.method}")
+                    println("${it.`class`}#${it.method}")
                 }
     }
 
     fun run() {
         val config = config()
+        RunPlugin.token = config.token
+        RunPlugin.testPlan = config.testPlan
+        RunPlugin.status = config.status
 
         val tongsConfiguration = Configuration.aConfigurationBuilder()
                 .setupCommonTongsConfiguration(config)
+                .withPlugins(listOf(RunPlugin::class.java.canonicalName))
                 .build()
         /*
         TODO:

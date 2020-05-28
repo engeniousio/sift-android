@@ -32,6 +32,6 @@ class CollectingTestCaseRule(private val noOpDevices: List<Device> = emptyList()
 }
 
 data class TestIdentifier(
-        val clazz: String,
+        val `class`: String,
         val method: String
 )

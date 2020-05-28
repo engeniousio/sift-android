@@ -1,9 +1,14 @@
 package io.engenious.sift
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Config(
+    val token: String,
+    val testPlan: String,
+    val status: TestStatus,
+
     val androidSdkPath: String,
     val applicationPackage: String,
     val testApplicationPackage: String,
@@ -46,4 +51,11 @@ data class Config(
          */
         val simulators: List<String>? = null
     )
+
+    @Serializable
+    enum class TestStatus {
+        @SerialName("enabled") ENABLED,
+        @SerialName("quarantined") QUARANTINED,
+        @SerialName("all") ALL
+    }
 }

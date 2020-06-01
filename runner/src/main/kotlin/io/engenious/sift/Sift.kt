@@ -19,17 +19,17 @@ class Sift(private val configFile: File) {
         // TODO: hide Tongs log
         Tongs(tongsConfiguration).run()
 
-        ListingPlugin.collectedTests
+        ListingPlugin.collectedTests.asSequence()
+                .map { "${it.`package`}.${it.`class`}#${it.method}" }
+                .sorted()
                 .forEach {
-                    println("${it.`class`}#${it.method}")
+                    println(it)
                 }
     }
 
     fun run() {
         val config = config()
-        RunPlugin.token = config.token
-        RunPlugin.testPlan = config.testPlan
-        RunPlugin.status = config.status
+        RunPlugin.config = config
 
         val tongsConfiguration = Configuration.aConfigurationBuilder()
                 .setupCommonTongsConfiguration(config)

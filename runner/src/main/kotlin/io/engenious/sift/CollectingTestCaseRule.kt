@@ -1,37 +1,35 @@
 package io.engenious.sift
 
-import com.github.tarcv.tongs.api.devices.Device
 import com.github.tarcv.tongs.api.run.TestCaseEvent
+import com.github.tarcv.tongs.api.testcases.TestCase
 import com.github.tarcv.tongs.api.testcases.TestCaseRule
+import java.util.*
+import kotlin.collections.HashSet
 
-class CollectingTestCaseRule(private val noOpDevices: List<Device> = emptyList()): TestCaseRule {
-    private val _testCases = HashSet<TestIdentifier>()
+class CollectingTestCaseRule: TestCaseRule {
+    private val _testCases = Collections.synchronizedSet(HashSet<TestIdentifier>())
     val testCases: Set<TestIdentifier>
-        get() = _testCases
+        get() = synchronized(_testCases) {
+            HashSet(_testCases)
+        }
 
     override fun transform(testCaseEvent: TestCaseEvent): TestCaseEvent {
         testCaseEvent.testCase
-                .let { TestIdentifier(it.testClass, it.testMethod) }
+                .let { TestIdentifier.fromTestCase(it) }
                 .also { _testCases.add(it) }
-        return if (noOpDevices.isEmpty()) {
-            testCaseEvent
-        } else {
-            TestCaseEvent.newTestCase(
-                    testCaseEvent.testCase.typeTag,
-                    testCaseEvent.testCase.testMethod,
-                    testCaseEvent.testCase.testClass,
-                    testCaseEvent.testCase.properties,
-                    testCaseEvent.testCase.annotations,
-                    testCaseEvent.testCase.extra,
-                    testCaseEvent.includedDevices,
-                    testCaseEvent.excludedDevices + noOpDevices,
-                    testCaseEvent.totalFailureCount
-            )
-        }
+        return testCaseEvent
     }
 }
 
 data class TestIdentifier(
+        val `package`: String,
         val `class`: String,
-        val method: String
-)
+        val method: String) {
+    companion object {
+        fun fromTestCase(testCase: TestCase): TestIdentifier {
+            val `package` = testCase.testPackage
+            val `class` = testCase.testClass.removePrefix("$`package`.")
+            return TestIdentifier(`package`, `class`, testCase.testMethod)
+        }
+    }
+}

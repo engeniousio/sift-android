@@ -32,7 +32,7 @@ data class Config(
         val xcodePath: String,
 
         /**
-         * Additional intstrumentation arguments passed to a device
+         * Additional instrumentation arguments passed to a device
          */
         val environmentVariables: Map<String, String> = emptyMap(),
 
@@ -52,6 +52,7 @@ data class Config(
         val simulators: List<String>? = null
     )
 
+    @Suppress("unused")
     @Serializable
     enum class TestStatus {
         @SerialName("enabled") ENABLED,

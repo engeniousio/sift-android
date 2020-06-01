@@ -30,6 +30,6 @@ class EnumArgChoice<T: Enum<T>>(private val choices: Array<T>): ArgType<T>(true)
     private fun getChoicesStr() = choices.map { toActualChoice(it) }
 
     companion object {
-        inline fun <reified T: Enum<T>> enumArgChoice(): EnumArgChoice<T> = EnumArgChoice(enumValues<T>())
+        inline fun <reified T: Enum<T>> enumArgChoice(): EnumArgChoice<T> = EnumArgChoice(enumValues())
     }
 }

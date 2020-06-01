@@ -37,7 +37,7 @@ class SiftClient(private val token: String) {
     fun postTests(testCases: Set<TestIdentifier>) {
         // TODO: implement retry
         runBlocking {
-            val result: HttpResponse = client.post("$baseUrl/settings") {
+            val result: HttpResponse = client.post("$baseUrl/public") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 header("token", token)
                 body = TestListRequest(testCases)
@@ -49,7 +49,7 @@ class SiftClient(private val token: String) {
     fun getEnabledTests(testPlan: String, status: Config.TestStatus): Set<TestIdentifier> {
         // TODO: implement retry
         return runBlocking {
-            val result: RunSettingsReponse = client.get("$baseUrl/settings") {
+            val result: RunSettingsResponse = client.get("$baseUrl/public") {
                 header("token", token)
                 parameter("platform", siftPlatform)
 
@@ -62,31 +62,32 @@ class SiftClient(private val token: String) {
 
             result.tests
                     .map {
-                        val parts = it.split("/")
-                        val clazz = parts.dropLast(1).joinToString(".")
-                        val method = parts.last()
-                        TestIdentifier(clazz, method)
+                        TestIdentifier.fromSerialized(it)
                     }
                     .toSet()
         }
     }
 }
 
+private fun TestIdentifier.Companion.fromSerialized(it: String): TestIdentifier {
+    val (`package`, `class`, method) = it.split("/", limit = 3)
+    return TestIdentifier(`package`, `class`, method)
+}
+private fun TestIdentifier.toSerialized() = "$`package`/$`class`/$method"
+
 private const val siftPlatform = "ANDROID"
 
 @Serializable
-private data class TestListRequest private constructor(
+private data class TestListRequest constructor(
         val platform: String = siftPlatform,
         val tests: List<String>
 ) {
     constructor(test: Collection<TestIdentifier>): this(
-            tests = test.map { "${it.`class`}/${it.method}" }
+            tests = test.map { it.toSerialized() }
     )
 }
 
 @Serializable
-private data class RunSettingsReponse(
+private data class RunSettingsResponse(
         val tests: List<String>
-) {
-
-}
+)

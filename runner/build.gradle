@@ -9,7 +9,6 @@ version '0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
-    mavenLocal()
     google()
     maven { url "https://kotlin.bintray.com/kotlinx" }
     jcenter()
@@ -18,9 +17,9 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation("com.github.tarcv.tongs:tongs-runner") {
+    implementation("com.github.TarCV.tongs:tongs-runner") {
         version {
-            strictly("0.5-SNAPSHOT")
+            strictly("0.5")
         }
     }
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")

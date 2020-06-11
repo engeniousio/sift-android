@@ -47,7 +47,11 @@ class Sift(private val configFile: File) {
          */
 
         // TODO: hide Tongs log
-        Tongs(tongsConfiguration).run()
+        try {
+            Tongs(tongsConfiguration).run()
+        } finally {
+            RunPlugin.postResults()
+        }
         // TODO: exit code
     }
 

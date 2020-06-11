@@ -65,6 +65,18 @@ class SiftClient(private val token: String) {
                     .toSet()
         }
     }
+
+    fun postResults(resultMap: Map<TestIdentifier, Boolean>) {
+        // TODO: implement retry
+        runBlocking {
+            val result: HttpResponse = client.post("$baseUrl/public/result") {
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+                header("token", token)
+                body = TestRunResult(resultMap, Any())
+            }
+            println(result)
+        }
+    }
 }
 
 private fun TestIdentifier.Companion.fromSerialized(it: String): TestIdentifier {
@@ -82,6 +94,15 @@ private data class TestListRequest constructor(
 ) {
     constructor(test: Collection<TestIdentifier>): this(
             tests = test.map { it.toSerialized() }
+    )
+}
+
+@Serializable
+private data class TestRunResult constructor(
+        val testResults: Map<String, Boolean>
+) {
+    constructor(runResults: Map<TestIdentifier, Boolean>, flag: Any): this(
+            runResults.mapKeys { it.key.toSerialized() }
     )
 }
 

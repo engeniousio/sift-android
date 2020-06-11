@@ -1,6 +1,8 @@
 package io.engenious.sift
 
 import com.github.tarcv.tongs.Configuration
+import com.github.tarcv.tongs.ManualPooling
+import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -49,6 +51,18 @@ class Sift(private val configFile: File) {
         // TODO: exit code
     }
 
+    private fun Config.tongsPoolStrategy(): PoolingStrategy {
+        return PoolingStrategy().apply {
+            manual = ManualPooling().apply {
+                groupings = mapOf(
+                        "devices" to nodes[0] // TODO
+                                .UDID
+                                .devices
+                )
+            }
+        }
+    }
+
     private fun Configuration.Builder.setupCommonTongsConfiguration(config: Config): Configuration.Builder {
         return withOutput(File(config.outputDirectoryPath))
                 .withAndroidSdk(File(config.androidSdkPath))
@@ -57,6 +71,7 @@ class Sift(private val configFile: File) {
                 .withRetryPerTestCaseQuota(config.rerunFailedTest)
                 .withTotalAllowedRetryQuota(Int.MAX_VALUE)
                 .withCoverageEnabled(false)
+                .withPoolingStrategy(config.tongsPoolStrategy())
                 .withDdmTermination(true)
     }
 

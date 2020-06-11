@@ -56,7 +56,7 @@ data class Config(
     @Serializable
     enum class TestStatus {
         @SerialName("enabled") ENABLED,
-        @SerialName("quarantined") QUARANTINED,
-        @SerialName("all") ALL
+        @SerialName("disabled") DISABLED,
+        @SerialName("quarantine") QUARANTINE
     }
 }

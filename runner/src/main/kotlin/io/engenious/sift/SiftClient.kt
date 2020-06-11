@@ -54,9 +54,7 @@ class SiftClient(private val token: String) {
                 parameter("platform", siftPlatform)
 
                 parameter("testplan", testPlan)
-                if (status != Config.TestStatus.ALL) {
-                    parameter("status", status.name.toLowerCase())
-                }
+                parameter("status", status.name.toUpperCase())
             }
             println(result)
 

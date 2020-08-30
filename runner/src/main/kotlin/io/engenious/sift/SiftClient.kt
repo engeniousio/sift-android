@@ -2,6 +2,7 @@ package io.engenious.sift
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
+import io.ktor.client.features.*
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.features.json.serializer.KotlinxSerializer
 import io.ktor.client.request.*
@@ -15,7 +16,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 
 class SiftClient(private val token: String) {
-    private val baseUrl = "http://api.orchestrator.engenious.io"
+    private val baseUrl = "https://staging.api.orchestrator.engenious.io"
 
     @OptIn(UnstableDefault::class)
     private val client = HttpClient(Apache) {
@@ -32,6 +33,7 @@ class SiftClient(private val token: String) {
                 )
             )
         }
+        install(HttpCallValidator)
     }
 
     fun postTests(testCases: Set<TestIdentifier>) {
@@ -42,7 +44,6 @@ class SiftClient(private val token: String) {
                 header("token", token)
                 body = TestListRequest(testCases)
             }
-            println(result)
         }
     }
 
@@ -56,7 +57,6 @@ class SiftClient(private val token: String) {
                 parameter("testplan", testPlan)
                 parameter("status", status.name.toUpperCase())
             }
-            println(result)
 
             result.tests
                     .map {
@@ -72,7 +72,7 @@ class SiftClient(private val token: String) {
             val result: HttpResponse = client.post("$baseUrl/public/result") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 header("token", token)
-                body = TestRunResult(resultMap, Any())
+                body = TestRunResult(resultMap)
             }
             println(result)
         }
@@ -99,10 +99,12 @@ private data class TestListRequest constructor(
 
 @Serializable
 private data class TestRunResult constructor(
-        val testResults: Map<String, Boolean>
+        val testResults: Map<String, Boolean>,
+        val platform: String = siftPlatform
 ) {
-    constructor(runResults: Map<TestIdentifier, Boolean>, flag: Any): this(
-            runResults.mapKeys { it.key.toSerialized() }
+    constructor(runResults: Map<TestIdentifier, Boolean>): this(
+            runResults.mapKeys { it.key.toSerialized() },
+            siftPlatform
     )
 }
 

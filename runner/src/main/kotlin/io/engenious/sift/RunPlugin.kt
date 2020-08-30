@@ -9,6 +9,7 @@ import com.github.tarcv.tongs.api.testcases.TestCaseRuleContext
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
 import kotlin.collections.HashMap
 
 class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestCaseRunRule> {
@@ -34,7 +35,7 @@ class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestC
             get() = _config.get() as Config
             set(value) = _config.set(value)
 
-        val siftClient by lazy { SiftClient(config.token) }
+        val siftClient by lazy(SYNCHRONIZED) { SiftClient(config.token) }
 
         val testResults: MutableMap<TestIdentifier, Boolean> =
                 Collections.synchronizedMap(HashMap<TestIdentifier, Boolean>())
@@ -47,7 +48,7 @@ class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestC
     private class FilteringTestCaseRule(
             private val enabledTestCasesProvider: () -> Set<TestIdentifier>
     ) : TestCaseRule {
-        private val enabledTestCases: Set<TestIdentifier> by lazy {
+        private val enabledTestCases: Set<TestIdentifier> by lazy(SYNCHRONIZED) {
             enabledTestCasesProvider()
         }
 

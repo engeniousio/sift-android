@@ -5,6 +5,7 @@ import com.github.tarcv.tongs.api.testcases.TestCaseRule
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleContext
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
 import kotlin.LazyThreadSafetyMode.PUBLICATION
+import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
 
 
 class ListingPlugin: TestCaseRuleFactory<TestCaseRule> {
@@ -16,7 +17,7 @@ class ListingPlugin: TestCaseRuleFactory<TestCaseRule> {
         val collectedTests
             get() = collectingTestCaseRule.testCases
 
-        private val collectingTestCaseRule by lazy(PUBLICATION) { CollectingTestCaseRule() }
+        private val collectingTestCaseRule by lazy(SYNCHRONIZED) { CollectingTestCaseRule() }
     }
 
     private class SkipAllTestCaseRule: TestCaseRule {

@@ -1,24 +1,22 @@
 package io.engenious.sift
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
+import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_INT
+import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
+import io.ktor.client.*
+import io.ktor.client.engine.apache.*
 import io.ktor.client.features.*
 import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.serializer.KotlinxSerializer
+import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 
 class SiftClient(private val token: String) {
     private val baseUrl = "https://staging.api.orchestrator.engenious.io"
 
-    @OptIn(UnstableDefault::class)
     private val client = HttpClient(Apache) {
         engine {
             followRedirects = true
@@ -26,11 +24,10 @@ class SiftClient(private val token: String) {
 
         install(JsonFeature) {
             serializer = KotlinxSerializer(
-                Json(
-                        JsonConfiguration(
-                                ignoreUnknownKeys = true
-                        )
-                )
+                Json {
+                    ignoreUnknownKeys = true
+                    coerceInputValues = true
+                }
             )
         }
         install(HttpCallValidator)

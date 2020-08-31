@@ -81,8 +81,10 @@ class Sift(private val configFile: File) {
 
     private fun config(): Config {
         try {
-            val json = Json(JsonConfiguration.Stable.copy(ignoreUnknownKeys = true))
-            return json.parse(Config.serializer(), configFile.readText())
+            val json = Json {
+                ignoreUnknownKeys = true
+            }
+            return json.decodeFromString(FileConfig.serializer(), configFile.readText())
         } catch (e: IOException) {
             throw RuntimeException("Failed to read the configuration file '${configFile}'", e)
         }

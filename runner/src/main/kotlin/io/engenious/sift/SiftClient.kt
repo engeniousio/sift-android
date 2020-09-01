@@ -44,7 +44,7 @@ class SiftClient(private val token: String) {
         }
     }
 
-    fun getEnabledTests(testPlan: String, status: Config.TestStatus): Set<TestIdentifier> {
+    fun getEnabledTests(testPlan: String, status: FileConfig.TestStatus): Set<TestIdentifier> {
         // TODO: implement retry
         return runBlocking {
             val result: RunSettingsResponse = client.get("$baseUrl/public") {
@@ -66,12 +66,24 @@ class SiftClient(private val token: String) {
     fun postResults(resultMap: Map<TestIdentifier, Boolean>) {
         // TODO: implement retry
         runBlocking {
-            val result: HttpResponse = client.post("$baseUrl/public/result") {
+            client.post<HttpResponse>("$baseUrl/public/result") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 header("token", token)
                 body = TestRunResult(resultMap)
             }
-            println(result)
+        }
+    }
+
+    fun getConfiguration(testPlan: String): OrchestratorConfig {
+        // TODO: implement retry
+        return runBlocking {
+            client.get<OrchestratorConfig>("$baseUrl/public") {
+                header("token", token)
+                parameter("platform", siftPlatform)
+
+                parameter("testplan", testPlan)
+                parameter("status", "ENABLED")
+            }
         }
     }
 }
@@ -109,3 +121,33 @@ private data class TestRunResult constructor(
 private data class RunSettingsResponse(
         val tests: List<String>
 )
+
+@Serializable
+data class OrchestratorConfig(
+        private val appPackage: String = DEFAULT_STRING,
+        private val testPackage: String = DEFAULT_STRING,
+        private val poollingStrategy: String = DEFAULT_STRING,
+        override val testsBucket: Int = DEFAULT_INT,
+        override val outputDirectoryPath: String = DEFAULT_STRING,
+        override val globalRetryLimit: Int = DEFAULT_INT,
+        private val testRetryLimit: Int = DEFAULT_INT,
+        override val testsExecutionTimeout: Int = DEFAULT_INT,
+        override val setUpScriptPath: String = DEFAULT_STRING,
+        override val tearDownScriptPath: String = DEFAULT_STRING,
+        override val reportTitle: String = DEFAULT_STRING,
+        override val reportSubtitle: String = DEFAULT_STRING,
+
+        override val nodes: List<FileConfig.Node> = emptyList()
+): MergeableConfigFields {
+    override val applicationPackage: String
+        get() = appPackage
+
+    override val testApplicationPackage: String
+        get() = testPackage
+
+    override val rerunFailedTest: Int
+        get() = testRetryLimit
+
+    override val poolingStrategy: String
+        get() = poollingStrategy
+}

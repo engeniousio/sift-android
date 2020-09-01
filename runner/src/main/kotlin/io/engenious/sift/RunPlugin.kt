@@ -30,9 +30,9 @@ class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestC
 
     companion object {
         @Suppress("ObjectPropertyName")
-        private val _config= AtomicReference<Config>()
-        var config: Config
-            get() = _config.get() as Config
+        private val _config= AtomicReference<FileConfig>()
+        var config: FileConfig
+            get() = _config.get() as FileConfig
             set(value) = _config.set(value)
 
         val siftClient by lazy(SYNCHRONIZED) { SiftClient(config.token) }

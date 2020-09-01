@@ -19,7 +19,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation("com.github.TarCV.tongs:tongs-runner") {
         version {
-            strictly("0.5")
+            strictly("1694b17af3e5c93db8191cd04f806b312b44a018")
         }
     }
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")

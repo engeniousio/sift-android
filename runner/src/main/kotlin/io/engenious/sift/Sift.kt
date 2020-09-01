@@ -12,8 +12,7 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.findParameterByName
 
 class Sift(private val configFile: File) {
-    fun list() {
-        val config = config()
+    fun list(): Int {
 
         val config = requestConfig()
         val tongsConfiguration = Configuration.Builder()
@@ -23,12 +22,15 @@ class Sift(private val configFile: File) {
 
         Tongs(tongsConfiguration).run()
 
-        ListingPlugin.collectedTests.asSequence()
+        val collectedTests = ListingPlugin.collectedTests
+        collectedTests.asSequence()
                 .map { "${it.`package`}.${it.`class`}#${it.method}" }
                 .sorted()
                 .forEach {
                     println(it)
                 }
+
+        return if (collectedTests.isNotEmpty()) 0 else 1
     }
 
     private fun requestConfig(): FileConfig {
@@ -49,7 +51,7 @@ class Sift(private val configFile: File) {
         }
     }
 
-    fun run() {
+    fun run(): Int {
         val config = requestConfig()
         RunPlugin.config = config
 
@@ -64,7 +66,9 @@ class Sift(private val configFile: File) {
         } finally {
             RunPlugin.postResults()
         }
-        // TODO: exit code
+
+        // return if (result) 0 else 1 // TODO: fix wrong result
+        return 0
     }
 
     private fun FileConfig.tongsPoolStrategy(): PoolingStrategy {

@@ -24,15 +24,14 @@ fun main(args: Array<String>) {
     val config = File(configPath)
     val sift = Sift(config)
 
-    exhaustive(when (command) {
+    val exitCode = when (command) {
         Command.LIST -> sift.list()
         Command.RUN -> sift.run()
-    })
+    }
+    System.exit(exitCode)
 }
 
 enum class Command {
     LIST,
     RUN
 }
-
-private fun exhaustive(unused: Any) {}

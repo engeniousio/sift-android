@@ -16,19 +16,19 @@ class Sift(private val configFile: File) {
 
         val config = requestConfig()
         val tongsConfiguration = Configuration.Builder()
-                .setupCommonTongsConfiguration(config)
-                .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
-                .build(true)
+            .setupCommonTongsConfiguration(config)
+            .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
+            .build(true)
 
         Tongs(tongsConfiguration).run()
 
         val collectedTests = ListingPlugin.collectedTests
         collectedTests.asSequence()
-                .map { "${it.`package`}.${it.`class`}#${it.method}" }
-                .sorted()
-                .forEach {
-                    println(it)
-                }
+            .map { "${it.`package`}.${it.`class`}#${it.method}" }
+            .sorted()
+            .forEach {
+                println(it)
+            }
 
         return if (collectedTests.isNotEmpty()) 0 else 1
     }
@@ -40,7 +40,7 @@ class Sift(private val configFile: File) {
             }
             json.decodeFromString(FileConfig.serializer(), configFile.readText())
         } catch (e: IOException) {
-            throw RuntimeException("Failed to read the configuration file '${configFile}'", e)
+            throw RuntimeException("Failed to read the configuration file '$configFile'", e)
         }
 
         return if (fileConfig.token.isNotEmpty()) {
@@ -56,10 +56,9 @@ class Sift(private val configFile: File) {
         RunPlugin.config = config
 
         val tongsConfiguration = Configuration.Builder()
-                .setupRunTongsConfiguration(config)
-                .withPlugins(listOf(RunPlugin::class.java.canonicalName))
-                .build(true)
-
+            .setupRunTongsConfiguration(config)
+            .withPlugins(listOf(RunPlugin::class.java.canonicalName))
+            .build(true)
 
         val result = try {
             Tongs(tongsConfiguration).run()
@@ -74,12 +73,12 @@ class Sift(private val configFile: File) {
         return PoolingStrategy().apply {
             manual = ManualPooling().apply {
                 groupings = mapOf(
-                        "devices" to (
-                                nodes[0]
-                                    .UDID
-                                    ?.devices
-                                    ?: emptyList()
-                                )
+                    "devices" to (
+                        nodes[0]
+                            .UDID
+                            ?.devices
+                            ?: emptyList()
+                        )
                 )
             }
         }
@@ -108,7 +107,7 @@ class Sift(private val configFile: File) {
         return this
     }
 
-    private inline fun <T: Any> ifValueSupplied(value: T, block: (T) -> Unit) {
+    private inline fun <T : Any> ifValueSupplied(value: T, block: (T) -> Unit) {
         if (isNonDefaultValue(value) != false) {
             block(value)
         }
@@ -117,37 +116,38 @@ class Sift(private val configFile: File) {
     companion object {
         internal fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFields): FileConfig {
             val overridingEntries = MergeableConfigFields::class.members
-                    .filterIsInstance<KProperty<*>>()
-                    .mapNotNull {
-                        val defaultValue = it.getter.call(fileConfig)
-                        val overridingValue = it.getter.call(orchestratorConfig)
+                .filterIsInstance<KProperty<*>>()
+                .mapNotNull {
+                    val defaultValue = it.getter.call(fileConfig)
+                    val overridingValue = it.getter.call(orchestratorConfig)
 
-                        assert(defaultValue != null)
-                        if (overridingValue == null) {
-                            return@mapNotNull null
-                        }
-                        if (defaultValue!!::class != overridingValue::class &&
-                                (defaultValue !is List<*> || overridingValue !is List<*>)) {
-                            throw RuntimeException("Orchestrator provided invalid value for '${it.name}' key")
-                        }
-
-                        val shouldOverride = isNonDefaultValue(overridingValue)
-                                ?: throw RuntimeException("Orchestrator provided invalid value for '${it.name}' key")
-
-                        if (shouldOverride) {
-                            it.name to overridingValue
-                        } else {
-                            null
-                        }
+                    assert(defaultValue != null)
+                    if (overridingValue == null) {
+                        return@mapNotNull null
                     }
+                    if (defaultValue!!::class != overridingValue::class &&
+                        (defaultValue !is List<*> || overridingValue !is List<*>)
+                    ) {
+                        throw RuntimeException("Orchestrator provided invalid value for '${it.name}' key")
+                    }
+
+                    val shouldOverride = isNonDefaultValue(overridingValue)
+                        ?: throw RuntimeException("Orchestrator provided invalid value for '${it.name}' key")
+
+                    if (shouldOverride) {
+                        it.name to overridingValue
+                    } else {
+                        null
+                    }
+                }
 
             return fileConfig::copy
-                    .let { copyFunction ->
-                        val parameterValues = overridingEntries.associate {
-                            copyFunction.findParameterByName(it.first)!! to it.second
-                        }
-                        copyFunction.callBy(parameterValues)
+                .let { copyFunction ->
+                    val parameterValues = overridingEntries.associate {
+                        copyFunction.findParameterByName(it.first)!! to it.second
                     }
+                    copyFunction.callBy(parameterValues)
+                }
         }
 
         private fun isNonDefaultValue(value: Any): Boolean? {

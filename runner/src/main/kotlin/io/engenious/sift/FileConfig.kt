@@ -30,25 +30,25 @@ interface MergeableConfigFields {
 
 @Serializable
 data class FileConfig(
-        val token: String,
-        val testPlan: String,
-        val status: TestStatus,
+    val token: String,
+    val testPlan: String,
+    val status: TestStatus,
 
-        override val applicationPackage: String = DEFAULT_STRING,
-        override val testApplicationPackage: String = DEFAULT_STRING,
-        override val outputDirectoryPath: String = "sift-result",
-        override val rerunFailedTest: Int = DEFAULT_INT,
-        override val testsBucket: Int = 1, // TODO: implement this option
-        override val globalRetryLimit: Int = DEFAULT_INT,
-        override val poolingStrategy: String = DEFAULT_STRING, // TODO: implement this option
-        override val reportTitle: String = "Test report",
-        override val reportSubtitle: String = " ",
-        override val testsExecutionTimeout: Int = DEFAULT_INT, // TODO: implement this option
-        override val setUpScriptPath: String = DEFAULT_STRING, // TODO: implement this option
-        override val tearDownScriptPath: String = DEFAULT_STRING, // TODO: implement this option
+    override val applicationPackage: String = DEFAULT_STRING,
+    override val testApplicationPackage: String = DEFAULT_STRING,
+    override val outputDirectoryPath: String = "sift-result",
+    override val rerunFailedTest: Int = DEFAULT_INT,
+    override val testsBucket: Int = 1, // TODO: implement this option
+    override val globalRetryLimit: Int = DEFAULT_INT,
+    override val poolingStrategy: String = DEFAULT_STRING, // TODO: implement this option
+    override val reportTitle: String = "Test report",
+    override val reportSubtitle: String = " ",
+    override val testsExecutionTimeout: Int = DEFAULT_INT, // TODO: implement this option
+    override val setUpScriptPath: String = DEFAULT_STRING, // TODO: implement this option
+    override val tearDownScriptPath: String = DEFAULT_STRING, // TODO: implement this option
 
-        override val nodes: List<Node> = DEFAULT_NODES // TODO: implement this option
-): MergeableConfigFields {
+    override val nodes: List<Node> = DEFAULT_NODES // TODO: implement this option
+) : MergeableConfigFields {
     @Serializable
     data class Node(
         val name: String,

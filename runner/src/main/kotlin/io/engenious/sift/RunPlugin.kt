@@ -7,12 +7,12 @@ import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
 import com.github.tarcv.tongs.api.testcases.TestCaseRule
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleContext
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
 import kotlin.collections.HashMap
 
-class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestCaseRunRule> {
+class RunPlugin : TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestCaseRunRule> {
     override fun testCaseRules(context: TestCaseRuleContext): Array<out TestCaseRule> {
         val collectingTestCaseRule = CollectingTestCaseRule()
         val filteringTestCaseRule = FilteringTestCaseRule {
@@ -30,7 +30,7 @@ class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestC
 
     companion object {
         @Suppress("ObjectPropertyName")
-        private val _config= AtomicReference<FileConfig>()
+        private val _config = AtomicReference<FileConfig>()
         var config: FileConfig
             get() = _config.get() as FileConfig
             set(value) = _config.set(value)
@@ -38,7 +38,7 @@ class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestC
         val siftClient by lazy(SYNCHRONIZED) { SiftClient(config.token) }
 
         val testResults: MutableMap<TestIdentifier, Boolean> =
-                Collections.synchronizedMap(HashMap<TestIdentifier, Boolean>())
+            Collections.synchronizedMap(HashMap<TestIdentifier, Boolean>())
 
         fun postResults() {
             siftClient.postResults(testResults.toMap())
@@ -46,7 +46,7 @@ class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestC
     }
 
     private class FilteringTestCaseRule(
-            private val enabledTestCasesProvider: () -> Set<TestIdentifier>
+        private val enabledTestCasesProvider: () -> Set<TestIdentifier>
     ) : TestCaseRule {
         private val enabledTestCases: Set<TestIdentifier> by lazy(SYNCHRONIZED) {
             enabledTestCasesProvider()
@@ -56,6 +56,5 @@ class RunPlugin: TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestC
             val testIdentifier = TestIdentifier.fromTestCase(testCaseEvent.testCase)
             return enabledTestCases.contains(testIdentifier)
         }
-
     }
 }

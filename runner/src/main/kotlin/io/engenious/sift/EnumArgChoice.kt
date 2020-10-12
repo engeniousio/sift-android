@@ -2,9 +2,7 @@ package io.engenious.sift
 
 import kotlinx.cli.ArgType
 
-import java.lang.IllegalArgumentException
-
-class EnumArgChoice<T: Enum<T>>(private val choices: Array<T>): ArgType<T>(true) {
+class EnumArgChoice<T : Enum<T>>(private val choices: Array<T>) : ArgType<T>(true) {
     init {
         if (getChoicesStr().distinct().size != choices.size) {
             throw IllegalArgumentException("Enum value names are not distinct when converted to lower case")
@@ -12,9 +10,9 @@ class EnumArgChoice<T: Enum<T>>(private val choices: Array<T>): ArgType<T>(true)
     }
 
     override val description: kotlin.String
-    get() {
-        return "{ Value should be one of ${getChoicesStr()} }"
-    }
+        get() {
+            return "{ Value should be one of ${getChoicesStr()} }"
+        }
 
     override fun convert(value: kotlin.String, name: kotlin.String): T {
         val ret = choices.singleOrNull { toActualChoice(it) == value }
@@ -30,6 +28,6 @@ class EnumArgChoice<T: Enum<T>>(private val choices: Array<T>): ArgType<T>(true)
     private fun getChoicesStr() = choices.map { toActualChoice(it) }
 
     companion object {
-        inline fun <reified T: Enum<T>> enumArgChoice(): EnumArgChoice<T> = EnumArgChoice(enumValues())
+        inline fun <reified T : Enum<T>> enumArgChoice(): EnumArgChoice<T> = EnumArgChoice(enumValues())
     }
 }

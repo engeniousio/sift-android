@@ -27,8 +27,8 @@ class SiftTest {
     @Test
     fun mergeWithOverridingList() {
         val newNode = FileConfig.Node(
-                "otherNode", "host", 77, "user", "pass", "deploy", "sdk",
-                emptyMap(), FileConfig.UdidLists(emptyList(), emptyList())
+            "otherNode", "host", 77, "user", "pass", "deploy", "sdk",
+            emptyMap(), FileConfig.UdidLists(emptyList(), emptyList())
         )
         val overridingConfig = emptyOrchestratorConfig.copy(nodes = listOf(newNode))
         val expectedConfig = defaultFileConfig.copy(nodes = listOf(newNode))
@@ -37,34 +37,36 @@ class SiftTest {
 
     companion object {
         private val defaultFileConfig = FileConfig(
-                token = "",
-                testPlan = "TESTPLAN",
-                status = FileConfig.TestStatus.ENABLED,
-                applicationPackage = "APP PACKAGE",
-                testApplicationPackage = "TEST APP PKG",
-                outputDirectoryPath = "OUTPUT DIR",
-                rerunFailedTest = 5,
-                nodes = listOf(FileConfig.Node(
-                        "name", "host", 77, "user", "pass", "deploy", "sdk",
-                        emptyMap(), FileConfig.UdidLists(emptyList(), emptyList()))
-                ),
-                setUpScriptPath = "setUp",
-                tearDownScriptPath = "tearDown",
-                testsBucket = 7,
-                testsExecutionTimeout = 100
+            token = "",
+            testPlan = "TESTPLAN",
+            status = FileConfig.TestStatus.ENABLED,
+            applicationPackage = "APP PACKAGE",
+            testApplicationPackage = "TEST APP PKG",
+            outputDirectoryPath = "OUTPUT DIR",
+            rerunFailedTest = 5,
+            nodes = listOf(
+                FileConfig.Node(
+                    "name", "host", 77, "user", "pass", "deploy", "sdk",
+                    emptyMap(), FileConfig.UdidLists(emptyList(), emptyList())
+                )
+            ),
+            setUpScriptPath = "setUp",
+            tearDownScriptPath = "tearDown",
+            testsBucket = 7,
+            testsExecutionTimeout = 100
         )
         private val emptyOrchestratorConfig = OrchestratorConfig(
-                rerunFailedTest = DEFAULT_INT,
-                tearDownScriptPath = DEFAULT_STRING,
-                setUpScriptPath = DEFAULT_STRING,
-                nodes = emptyList(),
-                outputDirectoryPath = DEFAULT_STRING,
-                testApplicationPackage = DEFAULT_STRING,
-                applicationPackage = DEFAULT_STRING,
-                reportSubtitle = DEFAULT_STRING,
-                reportTitle = DEFAULT_STRING,
-                globalRetryLimit = DEFAULT_INT,
-                testExecutionTimeout = DEFAULT_INT
+            rerunFailedTest = DEFAULT_INT,
+            tearDownScriptPath = DEFAULT_STRING,
+            setUpScriptPath = DEFAULT_STRING,
+            nodes = emptyList(),
+            outputDirectoryPath = DEFAULT_STRING,
+            testApplicationPackage = DEFAULT_STRING,
+            applicationPackage = DEFAULT_STRING,
+            reportSubtitle = DEFAULT_STRING,
+            reportTitle = DEFAULT_STRING,
+            globalRetryLimit = DEFAULT_INT,
+            testExecutionTimeout = DEFAULT_INT
         )
     }
 }

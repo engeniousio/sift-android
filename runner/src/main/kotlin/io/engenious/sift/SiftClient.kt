@@ -2,15 +2,19 @@ package io.engenious.sift
 
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_INT
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
-import io.ktor.client.*
-import io.ktor.client.engine.apache.*
-import io.ktor.client.features.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.apache.Apache
+import io.ktor.client.features.HttpCallValidator
 import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.serializer.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.utils.io.*
+import io.ktor.client.features.json.serializer.KotlinxSerializer
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -33,17 +37,21 @@ class SiftClient(private val token: String) {
         }
         install(HttpCallValidator) {
             validateResponse {
-                when(it.status.value) {
+                when (it.status.value) {
                     400 -> {
                         val json = Json {
                             ignoreUnknownKeys = true
                         }
-                        val error = json.decodeFromString(Error.serializer(), it.content.readRemaining().readText())
+                        val error = json.decodeFromString(
+                            Error.serializer(),
+                            it.content.readRemaining().readText()
+                        )
                         throw RuntimeException("Got an error from the Orchestrator: ${error.message}")
                     }
                     in 401..Int.MAX_VALUE -> {
                         throw RuntimeException(
-                                "Got an error from the Orchestrator: ${it.content.readRemaining().readText()}")
+                            "Got an error from the Orchestrator: ${it.content.readRemaining().readText()}"
+                        )
                     }
                 }
             }
@@ -52,8 +60,8 @@ class SiftClient(private val token: String) {
 
     fun postTests(testCases: Set<TestIdentifier>) {
         // TODO: implement retry
-        runBlocking {
-            val result: HttpResponse = client.post("$baseUrl/public") {
+        return runBlocking {
+            client.post("$baseUrl/public") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 header("token", token)
                 body = TestListRequest(testCases)
@@ -73,10 +81,10 @@ class SiftClient(private val token: String) {
             }
 
             result.tests
-                    .map {
-                        TestIdentifier.fromSerialized(it)
-                    }
-                    .toSet()
+                .map {
+                    TestIdentifier.fromSerialized(it)
+                }
+                .toSet()
         }
     }
 
@@ -115,47 +123,47 @@ private const val siftPlatform = "ANDROID"
 
 @Serializable
 private data class TestListRequest constructor(
-        val platform: String = siftPlatform,
-        val tests: List<String>
+    val platform: String = siftPlatform,
+    val tests: List<String>
 ) {
-    constructor(test: Collection<TestIdentifier>): this(
-            tests = test.map { it.toSerialized() }
+    constructor(test: Collection<TestIdentifier>) : this(
+        tests = test.map { it.toSerialized() }
     )
 }
 
 @Serializable
 private data class TestRunResult constructor(
-        val testResults: Map<String, Boolean>,
-        val platform: String = siftPlatform
+    val testResults: Map<String, Boolean>,
+    val platform: String = siftPlatform
 ) {
-    constructor(runResults: Map<TestIdentifier, Boolean>): this(
-            runResults.mapKeys { it.key.toSerialized() },
-            siftPlatform
+    constructor(runResults: Map<TestIdentifier, Boolean>) : this(
+        runResults.mapKeys { it.key.toSerialized() },
+        siftPlatform
     )
 }
 
 @Serializable
 private data class RunSettingsResponse(
-        val tests: List<String>
+    val tests: List<String>
 )
 
 @Serializable
 data class OrchestratorConfig(
-        private val appPackage: String = DEFAULT_STRING,
-        private val testPackage: String = DEFAULT_STRING,
-        private val poollingStrategy: String = DEFAULT_STRING,
-        override val testsBucket: Int = DEFAULT_INT,
-        override val outputDirectoryPath: String = DEFAULT_STRING,
-        override val globalRetryLimit: Int = DEFAULT_INT,
-        private val testRetryLimit: Int = DEFAULT_INT,
-        override val testsExecutionTimeout: Int = DEFAULT_INT,
-        override val setUpScriptPath: String = DEFAULT_STRING,
-        override val tearDownScriptPath: String = DEFAULT_STRING,
-        override val reportTitle: String = DEFAULT_STRING,
-        override val reportSubtitle: String = DEFAULT_STRING,
+    private val appPackage: String = DEFAULT_STRING,
+    private val testPackage: String = DEFAULT_STRING,
+    private val poollingStrategy: String = DEFAULT_STRING,
+    override val testsBucket: Int = DEFAULT_INT,
+    override val outputDirectoryPath: String = DEFAULT_STRING,
+    override val globalRetryLimit: Int = DEFAULT_INT,
+    private val testRetryLimit: Int = DEFAULT_INT,
+    override val testsExecutionTimeout: Int = DEFAULT_INT,
+    override val setUpScriptPath: String = DEFAULT_STRING,
+    override val tearDownScriptPath: String = DEFAULT_STRING,
+    override val reportTitle: String = DEFAULT_STRING,
+    override val reportSubtitle: String = DEFAULT_STRING,
 
-        override val nodes: List<FileConfig.Node> = emptyList()
-): MergeableConfigFields {
+    override val nodes: List<FileConfig.Node> = emptyList()
+) : MergeableConfigFields {
     override val applicationPackage: String
         get() = appPackage
 
@@ -171,5 +179,5 @@ data class OrchestratorConfig(
 
 @Serializable
 data class Error(
-        val message: String
+    val message: String
 )

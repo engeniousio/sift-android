@@ -18,7 +18,7 @@ class Sift(private val configFile: File) {
         val tongsConfiguration = Configuration.Builder()
                 .setupCommonTongsConfiguration(config)
                 .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
-                .build()
+                .build(true)
 
         Tongs(tongsConfiguration).run()
 
@@ -58,7 +58,7 @@ class Sift(private val configFile: File) {
         val tongsConfiguration = Configuration.Builder()
                 .setupRunTongsConfiguration(config)
                 .withPlugins(listOf(RunPlugin::class.java.canonicalName))
-                .build()
+                .build(true)
 
 
         val result = try {
@@ -67,8 +67,7 @@ class Sift(private val configFile: File) {
             RunPlugin.postResults()
         }
 
-        // return if (result) 0 else 1 // TODO: fix wrong result
-        return 0
+        return if (result) 0 else 1
     }
 
     private fun FileConfig.tongsPoolStrategy(): PoolingStrategy {

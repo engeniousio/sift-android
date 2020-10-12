@@ -10,6 +10,7 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -30,7 +31,23 @@ class SiftClient(private val token: String) {
                 }
             )
         }
-        install(HttpCallValidator)
+        install(HttpCallValidator) {
+            validateResponse {
+                when(it.status.value) {
+                    400 -> {
+                        val json = Json {
+                            ignoreUnknownKeys = true
+                        }
+                        val error = json.decodeFromString(Error.serializer(), it.content.readRemaining().readText())
+                        throw RuntimeException("Got an error from the Orchestrator: ${error.message}")
+                    }
+                    in 401..Int.MAX_VALUE -> {
+                        throw RuntimeException(
+                                "Got an error from the Orchestrator: ${it.content.readRemaining().readText()}")
+                    }
+                }
+            }
+        }
     }
 
     fun postTests(testCases: Set<TestIdentifier>) {
@@ -77,7 +94,7 @@ class SiftClient(private val token: String) {
     fun getConfiguration(testPlan: String): OrchestratorConfig {
         // TODO: implement retry
         return runBlocking {
-            client.get<OrchestratorConfig>("$baseUrl/public") {
+            client.get("$baseUrl/public") {
                 header("token", token)
                 parameter("platform", siftPlatform)
 
@@ -151,3 +168,8 @@ data class OrchestratorConfig(
     override val poolingStrategy: String
         get() = poollingStrategy
 }
+
+@Serializable
+data class Error(
+        val message: String
+)

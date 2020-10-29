@@ -1,0 +1,71 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "org.jlleitschuh.gradle:ktlint-gradle:9.4.1"
+    }
+}
+
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.4.10"
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.4.10'
+    id 'application'
+}
+
+group 'io.engenious.sift'
+version '0.1-SNAPSHOT'
+
+apply plugin: "org.jlleitschuh.gradle.ktlint"
+ktlint {
+    version.set("0.39.0")
+}
+
+repositories {
+    mavenCentral()
+    google()
+    maven { url "https://kotlin.bintray.com/kotlinx" }
+    jcenter()
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation("com.github.engeniousio.tongs:tongs-runner") {
+        version {
+            strictly("b937744b93b0e2947aa27d53938def865615e3a4")
+        }
+    }
+    implementation("com.github.engeniousio.tongs:tongs-common") {
+        version {
+            strictly("b937744b93b0e2947aa27d53938def865615e3a4")
+        }
+    }
+    implementation("com.github.engeniousio.tongs:tongs-plugin-api") {
+        version {
+            strictly("b937744b93b0e2947aa27d53938def865615e3a4")
+        }
+    }
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.0-RC"
+    implementation("io.ktor:ktor-client-apache:1.4.0")
+    implementation("io.ktor:ktor-client-json-jvm:1.4.0")
+    implementation("io.ktor:ktor-client-serialization-jvm:1.4.0")
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation 'junit:junit:4.12'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn"]
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn"]
+}
+
+application {
+    mainClassName = "io.engenious.sift.MainCliKt"
+}

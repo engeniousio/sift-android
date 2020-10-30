@@ -8,6 +8,7 @@ import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findParameterByName
 
@@ -17,6 +18,7 @@ class Sift(private val configFile: File) {
         val config = requestConfig()
         val tongsConfiguration = Configuration.Builder()
             .setupCommonTongsConfiguration(config)
+            .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
             .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
             .build(true)
 
@@ -33,6 +35,27 @@ class Sift(private val configFile: File) {
         return if (collectedTests.isNotEmpty()) 0 else 1
     }
 
+    fun initOrchestrator(): Int {
+        val config = requestConfig()
+        val tongsConfiguration = Configuration.Builder()
+            .setupCommonTongsConfiguration(config)
+            .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
+            .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
+            .build(true)
+
+        Tongs(tongsConfiguration).run()
+
+        val collectedTests = ListingPlugin.collectedTests
+        return if (collectedTests.isEmpty()) {
+            1
+        } else {
+            SiftClient(config.token).run {
+                postTests(collectedTests)
+            }
+            0
+        }
+    }
+
     private fun requestConfig(): FileConfig {
         val fileConfig = try {
             val json = Json {
@@ -43,8 +66,9 @@ class Sift(private val configFile: File) {
             throw RuntimeException("Failed to read the configuration file '$configFile'", e)
         }
 
-        return if (fileConfig.token.isNotEmpty()) {
-            val orchestratorConfig = SiftClient(fileConfig.token).getConfiguration(fileConfig.testPlan)
+        val testPlan = fileConfig.testPlan
+        return if (fileConfig.token.isNotEmpty() && !testPlan.isNullOrEmpty()) {
+            val orchestratorConfig = SiftClient(fileConfig.token).getConfiguration(testPlan)
             mergeConfigs(fileConfig, orchestratorConfig)
         } else {
             fileConfig
@@ -114,6 +138,8 @@ class Sift(private val configFile: File) {
     }
 
     companion object {
+        const val tempEmptyDirectoryName = "sift"
+
         internal fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFields): FileConfig {
             val overridingEntries = MergeableConfigFields::class.members
                 .filterIsInstance<KProperty<*>>()

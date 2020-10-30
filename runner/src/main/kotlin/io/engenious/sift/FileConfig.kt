@@ -31,8 +31,8 @@ interface MergeableConfigFields {
 @Serializable
 data class FileConfig(
     val token: String,
-    val testPlan: String,
-    val status: TestStatus,
+    val testPlan: String? = null,
+    val status: TestStatus? = null,
 
     override val applicationPackage: String = DEFAULT_STRING,
     override val testApplicationPackage: String = DEFAULT_STRING,

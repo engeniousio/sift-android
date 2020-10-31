@@ -109,7 +109,10 @@ class Sift(private val configFile: File) {
     }
 
     private fun Configuration.Builder.setupCommonTongsConfiguration(config: FileConfig): Configuration.Builder {
-        ifValueSupplied(config.nodes.single().androidSdkPath) { withAndroidSdk(File(it)) }
+        ifValueSupplied(config.nodes) {
+            val androidSdkPath = it.single().androidSdkPath
+            withAndroidSdk(File(androidSdkPath))
+        }
         ifValueSupplied(config.applicationPackage) { withApplicationApk(File(it)) }
         ifValueSupplied(config.testApplicationPackage) { withInstrumentationApk(File(it)) }
         ifValueSupplied(config.rerunFailedTest) { withRetryPerTestCaseQuota(it) }

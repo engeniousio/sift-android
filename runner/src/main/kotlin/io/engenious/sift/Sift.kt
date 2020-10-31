@@ -5,6 +5,7 @@ import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.IOException
@@ -98,7 +99,7 @@ class Sift(private val configFile: File) {
             manual = ManualPooling().apply {
                 groupings = mapOf(
                     "devices" to (
-                        nodes[0]
+                        nodes.singleLocalNode()
                             .UDID
                             ?.devices
                             ?: emptyList()
@@ -110,7 +111,7 @@ class Sift(private val configFile: File) {
 
     private fun Configuration.Builder.setupCommonTongsConfiguration(config: FileConfig): Configuration.Builder {
         ifValueSupplied(config.nodes) {
-            val androidSdkPath = it.single().androidSdkPath
+            val androidSdkPath = it.singleLocalNode().androidSdkPath
             withAndroidSdk(File(androidSdkPath))
         }
         ifValueSupplied(config.applicationPackage) { withApplicationApk(File(it)) }
@@ -189,4 +190,12 @@ class Sift(private val configFile: File) {
             }
         }
     }
+}
+
+private fun Iterable<FileConfig.Node>.singleLocalNode(): FileConfig.Node {
+    return this.singleOrNull()
+        ?: throw SerializationException(
+            "Exactly one node (localhost) should be specified under the 'nodes' key" +
+                " (remote nodes will be supported in future versions)"
+        )
 }

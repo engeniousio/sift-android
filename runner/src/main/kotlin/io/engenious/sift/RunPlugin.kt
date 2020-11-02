@@ -11,7 +11,6 @@ import kotlinx.serialization.SerializationException
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
-import kotlin.collections.HashMap
 
 class RunPlugin : TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestCaseRunRule> {
     override fun testCaseRules(context: TestCaseRuleContext): Array<out TestCaseRule> {
@@ -39,8 +38,10 @@ class RunPlugin : TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<Test
                 _config.set(value)
             }
 
-        val testPlan = validateConfigForRunning(config).first
-        val status = validateConfigForRunning(config).second
+        val testPlan: String
+            get() = validateConfigForRunning(config).first
+        val status: FileConfig.TestStatus
+            get() = validateConfigForRunning(config).second
 
         private fun validateConfigForRunning(value: FileConfig): Pair<String, FileConfig.TestStatus> {
             val testPlan = value.testPlan

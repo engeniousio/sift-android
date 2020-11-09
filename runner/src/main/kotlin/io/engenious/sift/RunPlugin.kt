@@ -7,10 +7,10 @@ import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
 import com.github.tarcv.tongs.api.testcases.TestCaseRule
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleContext
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
+import kotlinx.serialization.SerializationException
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
-import kotlin.collections.HashMap
 
 class RunPlugin : TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<TestCaseRunRule> {
     override fun testCaseRules(context: TestCaseRuleContext): Array<out TestCaseRule> {
@@ -18,7 +18,7 @@ class RunPlugin : TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<Test
         val filteringTestCaseRule = FilteringTestCaseRule {
             siftClient.run {
                 postTests(collectingTestCaseRule.testCases)
-                getEnabledTests(config.testPlan, config.status)
+                getEnabledTests(testPlan, status)
             }
         }
         return arrayOf(collectingTestCaseRule, filteringTestCaseRule)
@@ -33,7 +33,23 @@ class RunPlugin : TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<Test
         private val _config = AtomicReference<FileConfig>()
         var config: FileConfig
             get() = _config.get() as FileConfig
-            set(value) = _config.set(value)
+            set(value) {
+                validateConfigForRunning(value)
+                _config.set(value)
+            }
+
+        val testPlan: String
+            get() = validateConfigForRunning(config).first
+        val status: FileConfig.TestStatus
+            get() = validateConfigForRunning(config).second
+
+        private fun validateConfigForRunning(value: FileConfig): Pair<String, FileConfig.TestStatus> {
+            val testPlan = value.testPlan
+                ?: throw SerializationException("Field 'testPlan' in the configuration file is required to run tests")
+            val status = value.status
+                ?: throw SerializationException("Field 'status' in the configuration file is required to run tests")
+            return testPlan to status
+        }
 
         val siftClient by lazy(SYNCHRONIZED) { SiftClient(config.token) }
 

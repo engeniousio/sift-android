@@ -5,9 +5,11 @@ import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findParameterByName
 
@@ -17,6 +19,7 @@ class Sift(private val configFile: File) {
         val config = requestConfig()
         val tongsConfiguration = Configuration.Builder()
             .setupCommonTongsConfiguration(config)
+            .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
             .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
             .build(true)
 
@@ -33,6 +36,27 @@ class Sift(private val configFile: File) {
         return if (collectedTests.isNotEmpty()) 0 else 1
     }
 
+    fun initOrchestrator(): Int {
+        val config = requestConfig()
+        val tongsConfiguration = Configuration.Builder()
+            .setupCommonTongsConfiguration(config)
+            .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
+            .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
+            .build(true)
+
+        Tongs(tongsConfiguration).run()
+
+        val collectedTests = ListingPlugin.collectedTests
+        return if (collectedTests.isEmpty()) {
+            1
+        } else {
+            SiftClient(config.token).run {
+                postTests(collectedTests)
+            }
+            0
+        }
+    }
+
     private fun requestConfig(): FileConfig {
         val fileConfig = try {
             val json = Json {
@@ -43,8 +67,9 @@ class Sift(private val configFile: File) {
             throw RuntimeException("Failed to read the configuration file '$configFile'", e)
         }
 
-        return if (fileConfig.token.isNotEmpty()) {
-            val orchestratorConfig = SiftClient(fileConfig.token).getConfiguration(fileConfig.testPlan)
+        val testPlan = fileConfig.testPlan
+        return if (fileConfig.token.isNotEmpty() && !testPlan.isNullOrEmpty()) {
+            val orchestratorConfig = SiftClient(fileConfig.token).getConfiguration(testPlan)
             mergeConfigs(fileConfig, orchestratorConfig)
         } else {
             fileConfig
@@ -74,7 +99,7 @@ class Sift(private val configFile: File) {
             manual = ManualPooling().apply {
                 groupings = mapOf(
                     "devices" to (
-                        nodes[0]
+                        nodes.singleLocalNode()
                             .UDID
                             ?.devices
                             ?: emptyList()
@@ -85,7 +110,10 @@ class Sift(private val configFile: File) {
     }
 
     private fun Configuration.Builder.setupCommonTongsConfiguration(config: FileConfig): Configuration.Builder {
-        ifValueSupplied(config.nodes.single().androidSdkPath) { withAndroidSdk(File(it)) }
+        ifValueSupplied(config.nodes) {
+            val androidSdkPath = it.singleLocalNode().androidSdkPath
+            withAndroidSdk(File(androidSdkPath))
+        }
         ifValueSupplied(config.applicationPackage) { withApplicationApk(File(it)) }
         ifValueSupplied(config.testApplicationPackage) { withInstrumentationApk(File(it)) }
         ifValueSupplied(config.rerunFailedTest) { withRetryPerTestCaseQuota(it) }
@@ -114,6 +142,8 @@ class Sift(private val configFile: File) {
     }
 
     companion object {
+        const val tempEmptyDirectoryName = "sift"
+
         internal fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFields): FileConfig {
             val overridingEntries = MergeableConfigFields::class.members
                 .filterIsInstance<KProperty<*>>()
@@ -160,4 +190,12 @@ class Sift(private val configFile: File) {
             }
         }
     }
+}
+
+private fun Iterable<FileConfig.Node>.singleLocalNode(): FileConfig.Node {
+    return this.singleOrNull()
+        ?: throw SerializationException(
+            "Exactly one node (localhost) should be specified under the 'nodes' key" +
+                " (remote nodes will be supported in future versions)"
+        )
 }

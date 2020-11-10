@@ -53,7 +53,7 @@ data class FileConfig(
     override val poolingStrategy: String = DEFAULT_STRING, // TODO: implement this option
     override val reportTitle: String = "Test report",
     override val reportSubtitle: String = " ",
-    override val testsExecutionTimeout: Int = DEFAULT_INT, // TODO: implement this option
+    override val testsExecutionTimeout: Int = DEFAULT_INT,
     override val setUpScriptPath: String = DEFAULT_STRING, // TODO: implement this option
     override val tearDownScriptPath: String = DEFAULT_STRING, // TODO: implement this option
 

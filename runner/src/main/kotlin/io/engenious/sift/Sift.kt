@@ -119,7 +119,7 @@ class Sift(private val configFile: File) {
         ifValueSupplied(config.testApplicationPackage) { withInstrumentationApk(File(it)) }
         ifValueSupplied(config.rerunFailedTest) { withRetryPerTestCaseQuota(it) }
         ifValueSupplied(config.globalRetryLimit) { withTotalAllowedRetryQuota(it) }
-
+        ifValueSupplied(config.testsExecutionTimeout) { withTestOutputTimeout(it * 1_000) }
         ifValueSupplied(config.outputDirectoryPath) { withOutput(File(it)) }
         withCoverageEnabled(false)
         withPoolingStrategy(config.tongsPoolStrategy())

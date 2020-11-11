@@ -111,14 +111,15 @@ class Sift(private val configFile: File) {
 
     private fun Configuration.Builder.setupCommonTongsConfiguration(config: FileConfig): Configuration.Builder {
         ifValueSupplied(config.nodes) {
-            val androidSdkPath = it.singleLocalNode().androidSdkPath
-            withAndroidSdk(File(androidSdkPath))
+            val localNode = it.singleLocalNode()
+            withAndroidSdk(File(localNode.androidSdkPath))
+            withTestRunnerArguments(localNode.environmentVariables)
         }
         ifValueSupplied(config.applicationPackage) { withApplicationApk(File(it)) }
         ifValueSupplied(config.testApplicationPackage) { withInstrumentationApk(File(it)) }
         ifValueSupplied(config.rerunFailedTest) { withRetryPerTestCaseQuota(it) }
         ifValueSupplied(config.globalRetryLimit) { withTotalAllowedRetryQuota(it) }
-
+        ifValueSupplied(config.testsExecutionTimeout) { withTestOutputTimeout(it * 1_000) }
         ifValueSupplied(config.outputDirectoryPath) { withOutput(File(it)) }
         withCoverageEnabled(false)
         withPoolingStrategy(config.tongsPoolStrategy())

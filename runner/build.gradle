@@ -51,7 +51,7 @@ dependencies {
             strictly("b937744b93b0e2947aa27d53938def865615e3a4")
         }
     }
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")
+    implementation "com.github.ajalt.clikt:clikt:3.0.1"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.0-RC"
     implementation "org.http4k:http4k-client-okhttp:${http4kVersion}"
     implementation "org.http4k:http4k-core:${http4kVersion}"
@@ -74,5 +74,5 @@ compileTestKotlin {
 }
 
 application {
-    mainClassName = "io.engenious.sift.MainCliKt"
+    mainClassName = "io.engenious.sift.SiftKt"
 }

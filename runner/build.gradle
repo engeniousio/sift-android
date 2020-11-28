@@ -52,12 +52,14 @@ dependencies {
         }
     }
     implementation "com.github.ajalt.clikt:clikt:3.0.1"
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.0-RC"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.1"
     implementation "org.http4k:http4k-client-okhttp:${http4kVersion}"
+    implementation "org.http4k:http4k-server-ktorcio:${http4kVersion}"
     implementation "org.http4k:http4k-core:${http4kVersion}"
     implementation "org.http4k:http4k-format-jackson:${http4kVersion}"
     implementation "org.http4k:http4k-format-kotlinx-serialization:${http4kVersion}"
     implementation "org.http4k:http4k-jsonrpc:${http4kVersion}"
+    implementation "org.koin:koin-core:2.1.0" // TODO: same version as in Tongs
     implementation "com.squareup.okhttp3:logging-interceptor:4.9.0" // TODO: same version as OkHttpClient
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.10"
     implementation "org.jetbrains.kotlin:kotlin-reflect"

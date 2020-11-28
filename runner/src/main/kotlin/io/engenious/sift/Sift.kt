@@ -12,6 +12,7 @@ import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
+import io.engenious.sift.node.NodeServer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -22,7 +23,7 @@ import kotlin.reflect.full.findParameterByName
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) = SiftMain
-    .subcommands(Sift.List, Sift.Init, Sift.Run)
+    .subcommands(Sift.List, Sift.Init, Sift.Run, NodeServer)
     .main(args)
 
 @Suppress("unused")
@@ -113,14 +114,7 @@ abstract class Sift(help: String, name: String? = null) : BaseSiftCommand(help =
     }
 
     protected fun requestConfig(): FileConfig {
-        val fileConfig = try {
-            val json = Json {
-                ignoreUnknownKeys = true
-            }
-            json.decodeFromString(FileConfig.serializer(), config.readText())
-        } catch (e: IOException) {
-            throw RuntimeException("Failed to read the configuration file '$config'", e)
-        }
+        val fileConfig = readConfigFromFile()
 
         return if (fileConfig.token.isNotEmpty()) {
             val testPlan = fileConfig.testPlan.let {
@@ -135,6 +129,15 @@ abstract class Sift(help: String, name: String? = null) : BaseSiftCommand(help =
         } else {
             fileConfig
         }
+    }
+
+    internal fun readConfigFromFile() = try {
+        val json = Json {
+            ignoreUnknownKeys = true
+        }
+        json.decodeFromString(FileConfig.serializer(), config.readText())
+    } catch (e: IOException) {
+        throw RuntimeException("Failed to read the configuration file '$config'", e)
     }
 
     companion object {

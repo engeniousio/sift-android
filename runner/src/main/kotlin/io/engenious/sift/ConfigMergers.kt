@@ -8,7 +8,7 @@ fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFiel
         return MergedConfig(fileConfig)
     }
 
-    val orchestratorValues = Sift.configToMap(orchestratorConfig)
+    val orchestratorValues = Sift.dataClassToMap(orchestratorConfig)
     return fileConfig.mapPropertyValues { (name, defaultValue) ->
         val overridingValue = orchestratorValues[name]
 

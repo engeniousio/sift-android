@@ -11,12 +11,15 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import kotlin.reflect.full.findParameterByName
+import kotlin.reflect.full.instanceParameter
+import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.isAccessible
 
 class Sift(private val configFile: File) {
     fun list(): Int {
 
-        val config = requestConfig()
+        val config = requestConfig().injectEnvVars()
         val tongsConfiguration = Configuration.Builder()
             .setupCommonTongsConfiguration(config)
             .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
@@ -37,7 +40,7 @@ class Sift(private val configFile: File) {
     }
 
     fun initOrchestrator(): Int {
-        val config = requestConfig()
+        val config = requestConfig().injectEnvVars()
         val tongsConfiguration = Configuration.Builder()
             .setupCommonTongsConfiguration(config)
             .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
@@ -50,7 +53,7 @@ class Sift(private val configFile: File) {
         return if (collectedTests.isEmpty()) {
             1
         } else {
-            SiftClient(config.token).run {
+            SiftClient(config.mergedConfigWithInjectedVars.token).run {
                 postTests(collectedTests)
             }
             0
@@ -58,27 +61,37 @@ class Sift(private val configFile: File) {
     }
 
     private fun requestConfig(): MergedConfig {
-        val fileConfig = try {
+        val config = try {
             val json = Json {
                 ignoreUnknownKeys = true
             }
-            json.decodeFromString(FileConfig.serializer(), configFile.readText())
+            json
+                .decodeFromString(FileConfig.serializer(), configFile.readText())
+                .injectEnvVarsToNonMergableFields()
         } catch (e: IOException) {
             throw RuntimeException("Failed to read the configuration file '$configFile'", e)
         }
 
-        val testPlan = fileConfig.testPlan
-        return if (fileConfig.token.isNotEmpty() && !testPlan.isNullOrEmpty()) {
-            val orchestratorConfig = SiftClient(fileConfig.token).getConfiguration(testPlan)
-            mergeConfigs(fileConfig, orchestratorConfig)
-        } else {
-            mergeConfigs(fileConfig, null)
+        return config.fileConfigWithInjectedVars.let {
+            val testPlan = it.testPlan
+            if (it.token.isNotEmpty() && !testPlan.isNullOrEmpty()) {
+                val orchestratorConfig = requestOrchestratorConfig(config)
+                mergeConfigs(it, orchestratorConfig)
+            } else {
+                mergeConfigs(it, null)
+            }
         }
     }
 
+    private fun requestOrchestratorConfig(
+        config: FileConfigWithInjectedVars
+    ) = SiftClient(
+        config.fileConfigWithInjectedVars.token
+    ).getConfiguration(config.fileConfigWithInjectedVars.testPlan!!)
+
     fun run(): Int {
-        val config = requestConfig()
-        RunPlugin.config = config
+        val config = requestConfig().injectEnvVars()
+        RunPlugin.finalizedConfig = config
 
         val tongsConfiguration = Configuration.Builder()
             .setupRunTongsConfiguration(config)
@@ -109,30 +122,32 @@ class Sift(private val configFile: File) {
         }
     }
 
-    private fun Configuration.Builder.setupCommonTongsConfiguration(config: FileConfig): Configuration.Builder {
-        ifValueSupplied(config.nodes) {
-            val localNode = it.singleLocalNode()
-            withAndroidSdk(File(localNode.androidSdkPath))
-            withTestRunnerArguments(localNode.environmentVariables)
+    private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
+        merged.mergedConfigWithInjectedVars.let { it ->
+            ifValueSupplied(it.nodes) {
+                val localNode = it.singleLocalNode()
+                withAndroidSdk(File(localNode.androidSdkPath))
+                withTestRunnerArguments(localNode.environmentVariables)
+            }
+            ifValueSupplied(it.applicationPackage) { withApplicationApk(File(it)) }
+            ifValueSupplied(it.testApplicationPackage) { withInstrumentationApk(File(it)) }
+            ifValueSupplied(it.rerunFailedTest) { withRetryPerTestCaseQuota(it) }
+            ifValueSupplied(it.globalRetryLimit) { withTotalAllowedRetryQuota(it) }
+            ifValueSupplied(it.testsExecutionTimeout) { withTestOutputTimeout(it * 1_000) }
+            ifValueSupplied(it.outputDirectoryPath) { withOutput(File(it)) }
+            withCoverageEnabled(false)
+            withPoolingStrategy(it.tongsPoolStrategy())
+            withDdmTermination(true)
         }
-        ifValueSupplied(config.applicationPackage) { withApplicationApk(File(it)) }
-        ifValueSupplied(config.testApplicationPackage) { withInstrumentationApk(File(it)) }
-        ifValueSupplied(config.rerunFailedTest) { withRetryPerTestCaseQuota(it) }
-        ifValueSupplied(config.globalRetryLimit) { withTotalAllowedRetryQuota(it) }
-        ifValueSupplied(config.testsExecutionTimeout) { withTestOutputTimeout(it * 1_000) }
-        ifValueSupplied(config.outputDirectoryPath) { withOutput(File(it)) }
-        withCoverageEnabled(false)
-        withPoolingStrategy(config.tongsPoolStrategy())
-        withDdmTermination(true)
-
         return this
     }
 
-    private fun Configuration.Builder.setupRunTongsConfiguration(config: FileConfig): Configuration.Builder {
-        setupCommonTongsConfiguration(config)
-        ifValueSupplied(config.reportTitle) { withTitle(it) }
-        ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
-
+    private fun Configuration.Builder.setupRunTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
+        merged.mergedConfigWithInjectedVars.let { it ->
+            setupCommonTongsConfiguration(merged)
+            ifValueSupplied(it.reportTitle) { withTitle(it) }
+            ifValueSupplied(it.reportSubtitle) { withSubtitle(it) }
+        }
         return this
     }
 
@@ -148,21 +163,31 @@ class Sift(private val configFile: File) {
         fun FileConfig.mapPropertyValues(
             transform: (Map.Entry<String, Any?>) -> Any?
         ): FileConfig {
-            val copyFunction = this::copy
-            return configToMap(this)
+            return dataClassToMap(this)
                 .mapValues(transform)
+                .mapToDataClass(this)
+        }
+
+        fun <T : Any> Map<String, Any?>.mapToDataClass(original: T): T {
+            assert(original::class.isData)
+            val copyFunction = original::class.memberFunctions.single { it.name == "copy" }
+            return (this)
                 .mapKeys { (name, _) ->
                     copyFunction.findParameterByName(name)!!
                 }
                 .let {
-                    copyFunction.callBy(it)
+                    copyFunction.callBy(it + (copyFunction.instanceParameter!! to original)) as T
                 }
         }
 
-        fun configToMap(fileConfig: MergeableConfigFields) = MergeableConfigFields::class.memberProperties
-            .associate {
-                it.name to it.getter.call(fileConfig)
-            }
+        fun <T : Any> dataClassToMap(value: T): Map<String, Any?> {
+            return value::class.memberProperties
+                .associate {
+                    it.name to it.getter
+                        .also { getter -> getter.isAccessible = true }
+                        .call(value)
+                }
+        }
 
         fun isNonDefaultValue(value: Any): Boolean? {
             return when (value) {

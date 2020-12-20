@@ -30,28 +30,28 @@ class RunPlugin : TestCaseRuleFactory<TestCaseRule>, TestCaseRunRuleFactory<Test
 
     companion object {
         @Suppress("ObjectPropertyName")
-        private val _config = AtomicReference<FileConfig>()
-        var config: FileConfig
-            get() = _config.get() as FileConfig
+        private val _config = AtomicReference<MergedConfigWithInjectedVars>()
+        var finalizedConfig: MergedConfigWithInjectedVars
+            get() = _config.get() as MergedConfigWithInjectedVars
             set(value) {
                 validateConfigForRunning(value)
                 _config.set(value)
             }
 
         val testPlan: String
-            get() = validateConfigForRunning(config).first
+            get() = validateConfigForRunning(finalizedConfig).first
         val status: FileConfig.TestStatus
-            get() = validateConfigForRunning(config).second
+            get() = validateConfigForRunning(finalizedConfig).second
 
-        private fun validateConfigForRunning(value: FileConfig): Pair<String, FileConfig.TestStatus> {
-            val testPlan = value.testPlan
+        private fun validateConfigForRunning(value: MergedConfigWithInjectedVars): Pair<String, FileConfig.TestStatus> {
+            val testPlan = value.mergedConfigWithInjectedVars.testPlan
                 ?: throw SerializationException("Field 'testPlan' in the configuration file is required to run tests")
-            val status = value.status
+            val status = value.mergedConfigWithInjectedVars.status
                 ?: throw SerializationException("Field 'status' in the configuration file is required to run tests")
             return testPlan to status
         }
 
-        val siftClient by lazy(SYNCHRONIZED) { SiftClient(config.token) }
+        val siftClient by lazy(SYNCHRONIZED) { SiftClient(finalizedConfig.mergedConfigWithInjectedVars.token) }
 
         val testResults: MutableMap<TestIdentifier, Boolean> =
             Collections.synchronizedMap(HashMap<TestIdentifier, Boolean>())

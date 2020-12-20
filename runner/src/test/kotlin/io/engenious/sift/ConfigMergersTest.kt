@@ -5,7 +5,7 @@ import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class SiftTest {
+class ConfigMergersTest {
 
     @Test
     fun mergeWithEmptyConfig() {
@@ -44,6 +44,17 @@ class SiftTest {
         assertEquals(
             expectedConfig,
             mergeConfigs(defaultFileConfig, overridingConfig).mergedConfig
+        )
+    }
+
+    @Test
+    fun envVarsAreInjected() {
+        val (name, value) = System.getenv().entries.first()
+        val originalConfig = defaultFileConfig.copy(applicationPackage = "hjk_\$$name ")
+        val expectedConfig = defaultFileConfig.copy(applicationPackage = "hjk_$value ")
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(originalConfig, null).injectEnvVars().mergedConfigWithInjectedVars
         )
     }
 

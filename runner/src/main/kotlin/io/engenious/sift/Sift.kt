@@ -5,7 +5,6 @@ import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
-import io.engenious.sift.Sift.Companion.mapPropertyValues
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -58,7 +57,7 @@ class Sift(private val configFile: File) {
         }
     }
 
-    private fun requestConfig(): FileConfig {
+    private fun requestConfig(): MergedConfig {
         val fileConfig = try {
             val json = Json {
                 ignoreUnknownKeys = true
@@ -73,7 +72,7 @@ class Sift(private val configFile: File) {
             val orchestratorConfig = SiftClient(fileConfig.token).getConfiguration(testPlan)
             mergeConfigs(fileConfig, orchestratorConfig)
         } else {
-            fileConfig
+            mergeConfigs(fileConfig, null)
         }
     }
 
@@ -146,32 +145,6 @@ class Sift(private val configFile: File) {
     companion object {
         const val tempEmptyDirectoryName = "sift"
 
-        internal fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFields): FileConfig {
-            val orchestratorValues = configToMap(orchestratorConfig)
-            return fileConfig.mapPropertyValues { (name, defaultValue) ->
-                val overridingValue = orchestratorValues[name]
-
-                assert(defaultValue != null)
-                if (overridingValue == null) {
-                    return@mapPropertyValues defaultValue
-                }
-                if (defaultValue!!::class != overridingValue::class &&
-                    (defaultValue !is List<*> || overridingValue !is List<*>)
-                ) {
-                    throw RuntimeException("Orchestrator provided invalid value for '${name}' key")
-                }
-
-                val shouldOverride = this@Companion.isNonDefaultValue(overridingValue)
-                    ?: throw RuntimeException("Orchestrator provided invalid value for '${name}' key")
-
-                if (shouldOverride) {
-                    overridingValue
-                } else {
-                    return@mapPropertyValues defaultValue
-                }
-            }
-        }
-
         fun FileConfig.mapPropertyValues(
             transform: (Map.Entry<String, Any?>) -> Any?
         ): FileConfig {
@@ -186,12 +159,12 @@ class Sift(private val configFile: File) {
                 }
         }
 
-        private fun configToMap(fileConfig: MergeableConfigFields) = MergeableConfigFields::class.memberProperties
+        fun configToMap(fileConfig: MergeableConfigFields) = MergeableConfigFields::class.memberProperties
             .associate {
                 it.name to it.getter.call(fileConfig)
             }
 
-        private fun isNonDefaultValue(value: Any): Boolean? {
+        fun isNonDefaultValue(value: Any): Boolean? {
             return when (value) {
                 is Number -> value != 0
                 is String -> value.isNotEmpty()

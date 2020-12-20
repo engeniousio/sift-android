@@ -9,20 +9,29 @@ class SiftTest {
 
     @Test
     fun mergeWithEmptyConfig() {
-        assertEquals(defaultFileConfig, Sift.mergeConfigs(defaultFileConfig, emptyOrchestratorConfig))
+        assertEquals(
+            defaultFileConfig,
+            mergeConfigs(defaultFileConfig, emptyOrchestratorConfig).mergedConfig
+        )
     }
 
     @Test
     fun mergeWithOverridingInteger() {
         val overridingConfig = emptyOrchestratorConfig.copy(testRetryLimit = 75)
         val expectedConfig = defaultFileConfig.copy(rerunFailedTest = 75)
-        assertEquals(expectedConfig, Sift.mergeConfigs(defaultFileConfig, overridingConfig))
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(defaultFileConfig, overridingConfig).mergedConfig
+        )
     }
     @Test
     fun mergeWithOverridingString() {
         val overridingConfig = emptyOrchestratorConfig.copy(appPackage = "new package")
         val expectedConfig = defaultFileConfig.copy(applicationPackage = "new package")
-        assertEquals(expectedConfig, Sift.mergeConfigs(defaultFileConfig, overridingConfig))
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(defaultFileConfig, overridingConfig).mergedConfig
+        )
     }
     @Test
     fun mergeWithOverridingList() {
@@ -32,7 +41,10 @@ class SiftTest {
         )
         val overridingConfig = emptyOrchestratorConfig.copy(nodes = listOf(newNode))
         val expectedConfig = defaultFileConfig.copy(nodes = listOf(newNode))
-        assertEquals(expectedConfig, Sift.mergeConfigs(defaultFileConfig, overridingConfig))
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(defaultFileConfig, overridingConfig).mergedConfig
+        )
     }
 
     companion object {

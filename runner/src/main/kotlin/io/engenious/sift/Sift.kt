@@ -5,13 +5,14 @@ import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
+import io.engenious.sift.Sift.Companion.mapPropertyValues
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import kotlin.reflect.KProperty
 import kotlin.reflect.full.findParameterByName
+import kotlin.reflect.full.memberProperties
 
 class Sift(private val configFile: File) {
     fun list(): Int {
@@ -146,40 +147,49 @@ class Sift(private val configFile: File) {
         const val tempEmptyDirectoryName = "sift"
 
         internal fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFields): FileConfig {
-            val overridingEntries = MergeableConfigFields::class.members
-                .filterIsInstance<KProperty<*>>()
-                .mapNotNull {
-                    val defaultValue = it.getter.call(fileConfig)
-                    val overridingValue = it.getter.call(orchestratorConfig)
+            val orchestratorValues = configToMap(orchestratorConfig)
+            return fileConfig.mapPropertyValues { (name, defaultValue) ->
+                val overridingValue = orchestratorValues[name]
 
-                    assert(defaultValue != null)
-                    if (overridingValue == null) {
-                        return@mapNotNull null
-                    }
-                    if (defaultValue!!::class != overridingValue::class &&
-                        (defaultValue !is List<*> || overridingValue !is List<*>)
-                    ) {
-                        throw RuntimeException("Orchestrator provided invalid value for '${it.name}' key")
-                    }
-
-                    val shouldOverride = isNonDefaultValue(overridingValue)
-                        ?: throw RuntimeException("Orchestrator provided invalid value for '${it.name}' key")
-
-                    if (shouldOverride) {
-                        it.name to overridingValue
-                    } else {
-                        null
-                    }
+                assert(defaultValue != null)
+                if (overridingValue == null) {
+                    return@mapPropertyValues defaultValue
+                }
+                if (defaultValue!!::class != overridingValue::class &&
+                    (defaultValue !is List<*> || overridingValue !is List<*>)
+                ) {
+                    throw RuntimeException("Orchestrator provided invalid value for '${name}' key")
                 }
 
-            return fileConfig::copy
-                .let { copyFunction ->
-                    val parameterValues = overridingEntries.associate {
-                        copyFunction.findParameterByName(it.first)!! to it.second
-                    }
-                    copyFunction.callBy(parameterValues)
+                val shouldOverride = this@Companion.isNonDefaultValue(overridingValue)
+                    ?: throw RuntimeException("Orchestrator provided invalid value for '${name}' key")
+
+                if (shouldOverride) {
+                    overridingValue
+                } else {
+                    return@mapPropertyValues defaultValue
+                }
+            }
+        }
+
+        fun FileConfig.mapPropertyValues(
+            transform: (Map.Entry<String, Any?>) -> Any?
+        ): FileConfig {
+            val copyFunction = this::copy
+            return configToMap(this)
+                .mapValues(transform)
+                .mapKeys { (name, _) ->
+                    copyFunction.findParameterByName(name)!!
+                }
+                .let {
+                    copyFunction.callBy(it)
                 }
         }
+
+        private fun configToMap(fileConfig: MergeableConfigFields) = MergeableConfigFields::class.memberProperties
+            .associate {
+                it.name to it.getter.call(fileConfig)
+            }
 
         private fun isNonDefaultValue(value: Any): Boolean? {
             return when (value) {

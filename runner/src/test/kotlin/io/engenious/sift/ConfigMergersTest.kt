@@ -5,34 +5,57 @@ import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class SiftTest {
+class ConfigMergersTest {
 
     @Test
     fun mergeWithEmptyConfig() {
-        assertEquals(defaultFileConfig, Sift.mergeConfigs(defaultFileConfig, emptyOrchestratorConfig))
+        assertEquals(
+            defaultFileConfig,
+            mergeConfigs(defaultFileConfig, emptyOrchestratorConfig).mergedConfig
+        )
     }
 
     @Test
     fun mergeWithOverridingInteger() {
-        val overridingConfig = emptyOrchestratorConfig.copy(rerunFailedTest = 75)
+        val overridingConfig = emptyOrchestratorConfig.copy(testRetryLimit = 75)
         val expectedConfig = defaultFileConfig.copy(rerunFailedTest = 75)
-        assertEquals(expectedConfig, Sift.mergeConfigs(defaultFileConfig, overridingConfig))
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(defaultFileConfig, overridingConfig).mergedConfig
+        )
     }
     @Test
     fun mergeWithOverridingString() {
-        val overridingConfig = emptyOrchestratorConfig.copy(applicationPackage = "new package")
+        val overridingConfig = emptyOrchestratorConfig.copy(appPackage = "new package")
         val expectedConfig = defaultFileConfig.copy(applicationPackage = "new package")
-        assertEquals(expectedConfig, Sift.mergeConfigs(defaultFileConfig, overridingConfig))
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(defaultFileConfig, overridingConfig).mergedConfig
+        )
     }
     @Test
     fun mergeWithOverridingList() {
-        val newNode = FileConfig.Node(
+        val newNode = FileConfig.Node.RemoteNode(
             "otherNode", "host", 77, "user", "pass", "deploy", "sdk",
             emptyMap(), FileConfig.UdidLists(emptyList(), emptyList())
         )
         val overridingConfig = emptyOrchestratorConfig.copy(nodes = listOf(newNode))
         val expectedConfig = defaultFileConfig.copy(nodes = listOf(newNode))
-        assertEquals(expectedConfig, Sift.mergeConfigs(defaultFileConfig, overridingConfig))
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(defaultFileConfig, overridingConfig).mergedConfig
+        )
+    }
+
+    @Test
+    fun envVarsAreInjected() {
+        val (name, value) = System.getenv().entries.first()
+        val originalConfig = defaultFileConfig.copy(applicationPackage = "hjk_\$$name ")
+        val expectedConfig = defaultFileConfig.copy(applicationPackage = "hjk_$value ")
+        assertEquals(
+            expectedConfig,
+            mergeConfigs(originalConfig, null).injectEnvVars().mergedConfigWithInjectedVars
+        )
     }
 
     companion object {
@@ -45,7 +68,7 @@ class SiftTest {
             outputDirectoryPath = "OUTPUT DIR",
             rerunFailedTest = 5,
             nodes = listOf(
-                FileConfig.Node(
+                FileConfig.Node.RemoteNode(
                     "name", "host", 77, "user", "pass", "deploy", "sdk",
                     emptyMap(), FileConfig.UdidLists(emptyList(), emptyList())
                 )
@@ -56,17 +79,17 @@ class SiftTest {
             testsExecutionTimeout = 100
         )
         private val emptyOrchestratorConfig = OrchestratorConfig(
-            rerunFailedTest = DEFAULT_INT,
+            testRetryLimit = DEFAULT_INT,
             tearDownScriptPath = DEFAULT_STRING,
             setUpScriptPath = DEFAULT_STRING,
             nodes = emptyList(),
             outputDirectoryPath = DEFAULT_STRING,
-            testApplicationPackage = DEFAULT_STRING,
-            applicationPackage = DEFAULT_STRING,
+            testPackage = DEFAULT_STRING,
+            appPackage = DEFAULT_STRING,
             reportSubtitle = DEFAULT_STRING,
             reportTitle = DEFAULT_STRING,
             globalRetryLimit = DEFAULT_INT,
-            testExecutionTimeout = DEFAULT_INT
+            testsExecutionTimeout = DEFAULT_INT
         )
     }
 }

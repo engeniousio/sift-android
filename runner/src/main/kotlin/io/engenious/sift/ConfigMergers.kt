@@ -19,11 +19,11 @@ fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFiel
         if (defaultValue!!::class != overridingValue::class &&
             (defaultValue !is List<*> || overridingValue !is List<*>)
         ) {
-            throw RuntimeException("Orchestrator provided invalid value for '${name}' key")
+            throw RuntimeException("Orchestrator provided invalid value for '$name' key")
         }
 
         val shouldOverride = isNonDefaultValue(overridingValue)
-            ?: throw RuntimeException("Orchestrator provided invalid value for '${name}' key")
+            ?: throw RuntimeException("Orchestrator provided invalid value for '$name' key")
 
         if (shouldOverride) {
             overridingValue

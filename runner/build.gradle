@@ -35,17 +35,17 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation("com.github.engeniousio.tongs:tongs-runner") {
         version {
-            strictly("e56d37e9f8d08a5c46e2aacab5728299f5cdc89c")
+            strictly("fe8be35da1917edd4b39df04023d269b177c281c")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-common") {
         version {
-            strictly("e56d37e9f8d08a5c46e2aacab5728299f5cdc89c")
+            strictly("fe8be35da1917edd4b39df04023d269b177c281c")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-plugin-api") {
         version {
-            strictly("e56d37e9f8d08a5c46e2aacab5728299f5cdc89c")
+            strictly("fe8be35da1917edd4b39df04023d269b177c281c")
         }
     }
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")

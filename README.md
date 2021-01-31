@@ -9,11 +9,11 @@
 
 ### Example of **config.json** file (JSON format):
 
-```JSON
+```JSON5
 {
     "token": "Orchestrator token",
     "testPlan": "Orchestrator test plan name",
-    "status": "test status to include in the run (enabled, disabled, quarantine)",
+    "status": "test status to include in the run (enabled, disabled, quarantined)",
     "androidSdkPath": "path to the Android SDK root directory",
     "outputDirectoryPath": "path to the directory where tests results will be collected",
     "applicationPackage": "path to the APK of the application under test",

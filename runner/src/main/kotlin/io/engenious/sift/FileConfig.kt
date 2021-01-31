@@ -137,6 +137,6 @@ data class FileConfig(
     enum class TestStatus {
         @SerialName("enabled") ENABLED,
         @SerialName("disabled") DISABLED,
-        @SerialName("quarantine") QUARANTINE
+        @SerialName("quarantined") QUARANTINED
     }
 }

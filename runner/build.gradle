@@ -1,27 +1,10 @@
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath "org.jlleitschuh.gradle:ktlint-gradle:9.4.1"
-    }
-}
-
 plugins {
-    id "org.jetbrains.kotlin.jvm" version "1.4.10"
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.4.10'
+    id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
     id 'application'
 }
 
 group 'io.engenious.sift'
 version '0.1-SNAPSHOT'
-
-apply plugin: "org.jlleitschuh.gradle.ktlint"
-ktlint {
-    version.set("0.39.0")
-}
 
 repositories {
     mavenCentral()
@@ -49,10 +32,13 @@ dependencies {
         }
     }
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.0-RC"
-    implementation("io.ktor:ktor-client-apache:1.4.0")
-    implementation("io.ktor:ktor-client-json-jvm:1.4.0")
-    implementation("io.ktor:ktor-client-serialization-jvm:1.4.0")
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.1"
+    implementation "org.http4k:http4k-client-okhttp:${http4kVersion}"
+    implementation "org.http4k:http4k-core:${http4kVersion}"
+    implementation "org.http4k:http4k-format-kotlinx-serialization:${http4kVersion}"
+    implementation "org.http4k:http4k-jsonrpc:${http4kVersion}"
+    implementation "org.http4k:http4k-multipart:${http4kVersion}"
+    implementation "com.squareup.okhttp3:logging-interceptor:4.9.0" // TODO: same version as OkHttpClient
     implementation "org.jetbrains.kotlin:kotlin-reflect"
     implementation 'junit:junit:4.12'
 }

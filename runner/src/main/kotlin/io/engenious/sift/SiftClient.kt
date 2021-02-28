@@ -6,10 +6,14 @@ import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.http4k.client.OkHttp
-import org.http4k.core.*
+import org.http4k.core.Filter
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.then
+import org.http4k.core.with
 import org.http4k.format.ConfigurableKotlinxSerialization
 import org.http4k.lens.LensFailure
-
 
 class SiftClient(private val token: String) {
     private val baseUrl = "https://staging.api.orchestrator.engenious.io"
@@ -51,7 +55,7 @@ class SiftClient(private val token: String) {
         .let {
             it.addInterceptor(
                 HttpLoggingInterceptor()
-                    .apply { // only enable in debug mode
+                    .apply { // TODO: only enable in debug mode
                         setLevel(HttpLoggingInterceptor.Level.BODY)
                         redactHeader("token")
                     }

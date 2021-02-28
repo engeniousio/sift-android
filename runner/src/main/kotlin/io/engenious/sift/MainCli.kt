@@ -4,6 +4,7 @@ import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.cli.required
 import java.io.File
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     val parser = ArgParser("sift")
@@ -28,7 +29,7 @@ fun main(args: Array<String>) {
         Command.LIST -> sift.list()
         Command.RUN -> sift.run()
     }
-    System.exit(exitCode)
+    exitProcess(exitCode)
 }
 
 enum class Command {

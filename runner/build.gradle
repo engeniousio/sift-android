@@ -55,3 +55,6 @@ compileTestKotlin {
 application {
     mainClassName = "io.engenious.sift.MainCliKt"
 }
+run {
+    workingDir = project.getProperties().getOrDefault("workingDir", project.projectDir)
+}

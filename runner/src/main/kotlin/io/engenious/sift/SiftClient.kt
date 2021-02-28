@@ -2,115 +2,122 @@ package io.engenious.sift
 
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_INT
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.HttpCallValidator
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.serializer.KotlinxSerializer
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.parameter
-import io.ktor.client.request.post
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.utils.io.readRemaining
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import org.http4k.client.OkHttp
+import org.http4k.core.Filter
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.then
+import org.http4k.core.with
+import org.http4k.format.ConfigurableKotlinxSerialization
+import org.http4k.lens.LensFailure
 
 class SiftClient(private val token: String) {
     private val baseUrl = "https://staging.api.orchestrator.engenious.io"
 
-    private val client = HttpClient(Apache) {
-        engine {
-            followRedirects = true
-        }
+    private object RequestSerializer : ConfigurableKotlinxSerialization({
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    })
 
-        install(JsonFeature) {
-            serializer = KotlinxSerializer(
-                Json {
-                    ignoreUnknownKeys = true
-                    coerceInputValues = true
-                }
-            )
-        }
-        install(HttpCallValidator) {
-            validateResponse {
-                when (it.status.value) {
+    private object SuccessSerializer : ConfigurableKotlinxSerialization({
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    })
+
+    private object ErrorSerializer : ConfigurableKotlinxSerialization({
+        ignoreUnknownKeys = true
+    })
+
+    private val responseValidator = Filter { next ->
+        {
+            next(it).apply {
+                when (status.code) {
                     400 -> {
-                        val json = Json {
-                            ignoreUnknownKeys = true
-                        }
-                        val error = json.decodeFromString(
-                            Error.serializer(),
-                            it.content.readRemaining().readText()
-                        )
+                        val error = ErrorSerializer.autoBody<Error>().toLens()(this)
                         throw RuntimeException("Got an error from the Orchestrator: ${error.message}")
                     }
                     in 401..Int.MAX_VALUE -> {
                         throw RuntimeException(
-                            "Got an error from the Orchestrator: ${it.content.readRemaining().readText()}"
+                            "Got an error from the Orchestrator: ${bodyString()}"
                         )
                     }
                 }
             }
         }
     }
+    private val client = OkHttpClient.Builder()
+        .followRedirects(true)
+        .let {
+            it.addInterceptor(
+                HttpLoggingInterceptor()
+                    .apply { // TODO: only enable in debug mode
+                        setLevel(HttpLoggingInterceptor.Level.BODY)
+                        redactHeader("token")
+                    }
+            )
+        }
+        .build()
+        .let { OkHttp(it) }
+        .let {
+            responseValidator.then(it)
+        }
 
     fun postTests(testCases: Set<TestIdentifier>) {
         // TODO: implement retry
-        return runBlocking {
-            client.post("$baseUrl/public") {
-                header(HttpHeaders.ContentType, ContentType.Application.Json)
-                header("token", token)
-                body = TestListRequest(testCases)
-            }
-        }
+        val bodyLens = RequestSerializer.autoBody<TestListRequest>().toLens()
+        Request(Method.POST, "$baseUrl/public")
+            .header("token", token)
+            .with(bodyLens of TestListRequest(testCases))
+            .run(client)
     }
 
     fun getEnabledTests(testPlan: String, status: FileConfig.TestStatus): Set<TestIdentifier> {
         // TODO: implement retry
-        return runBlocking {
-            val result: RunSettingsResponse = client.get("$baseUrl/public") {
-                header("token", token)
-                parameter("platform", siftPlatform)
-
-                parameter("testplan", testPlan)
-                parameter("status", status.name.toUpperCase())
+        return Request(Method.GET, "$baseUrl/public")
+            .header("token", token)
+            .query("platform", siftPlatform)
+            .query("testplan", testPlan)
+            .query("status", status.name.toUpperCase())
+            .run(client)
+            .decodeBody<RunSettingsResponse>()
+            .tests
+            .map {
+                TestIdentifier.fromSerialized(it)
             }
-
-            result.tests
-                .map {
-                    TestIdentifier.fromSerialized(it)
-                }
-                .toSet()
-        }
+            .toSet()
     }
 
     fun postResults(resultMap: Map<TestIdentifier, Boolean>) {
         // TODO: implement retry
-        runBlocking {
-            client.post<HttpResponse>("$baseUrl/public/result") {
-                header(HttpHeaders.ContentType, ContentType.Application.Json)
-                header("token", token)
-                body = TestRunResult(resultMap)
-            }
-        }
+        val bodyLens = RequestSerializer.autoBody<TestRunResult>().toLens()
+        Request(Method.POST, "$baseUrl/public/result")
+            .header("token", token)
+            .with(bodyLens of TestRunResult(resultMap))
+            .run(client)
     }
 
     fun getConfiguration(testPlan: String): OrchestratorConfig {
         // TODO: implement retry
-        return runBlocking {
-            client.get("$baseUrl/public") {
-                header("token", token)
-                parameter("platform", siftPlatform)
-
-                parameter("testplan", testPlan)
-                parameter("status", "ENABLED")
-            }
+        val request = Request(Method.GET, "$baseUrl/public")
+            .header("token", token)
+            .query("platform", siftPlatform)
+            .query("testplan", testPlan)
+            .query("status", "ENABLED")
+        try {
+            return client(request).decodeBody()
+        } catch (e: LensFailure) {
+            e.cause
+                ?.let { throw it }
+                ?: throw e
         }
     }
+
+    private inline fun <reified T : Any> Response.decodeBody(): T = SuccessSerializer.autoBody<T>().toLens()(this)
 }
 
 private fun TestIdentifier.Companion.fromSerialized(it: String): TestIdentifier {

@@ -4,6 +4,7 @@ import com.github.tarcv.tongs.Configuration
 import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
+import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -90,21 +91,36 @@ class Sift(private val configFile: File) {
     ).getConfiguration(config.fileConfigWithInjectedVars.testPlan!!)
 
     fun run(): Int {
-        val config = requestConfig().injectEnvVars()
-        RunPlugin.finalizedConfig = config
+        val finalizedConfig: MergedConfigWithInjectedVars = requestConfig().injectEnvVars()
+        val testPlan = finalizedConfig.mergedConfigWithInjectedVars.testPlan
+            ?: throw SerializationException("Field 'testPlan' in the configuration file is required to run tests")
+        val status = finalizedConfig.mergedConfigWithInjectedVars.status
+            ?: throw SerializationException("Field 'status' in the configuration file is required to run tests")
 
-        val tongsConfiguration = Configuration.Builder()
-            .setupRunTongsConfiguration(config)
-            .withPlugins(listOf(RunPlugin::class.java.canonicalName))
-            .build(true)
+        val siftClient by lazy { SiftClient(finalizedConfig.mergedConfigWithInjectedVars.token) }
 
-        val result = try {
-            Tongs(tongsConfiguration).run()
-        } finally {
-            RunPlugin.postResults()
-        }
-
-        return if (result) 0 else 1
+        return conveyor
+            .prepare(
+                {
+                    setupRunTongsConfiguration(finalizedConfig)
+                },
+                TestCaseCollectingPlugin,
+                { allTests ->
+                    siftClient.run {
+                        postTests(allTests)
+                        getEnabledTests(testPlan, status)
+                    }
+                },
+                FilteringTestCasePlugin,
+                ResultCollectingPlugin(),
+                { results ->
+                    siftClient.postResults(results)
+                }
+            )
+            .run(withWarnings = true)
+            .let { result ->
+                if (result) 0 else 1
+            }
     }
 
     private fun FileConfig.tongsPoolStrategy(): PoolingStrategy {
@@ -176,6 +192,7 @@ class Sift(private val configFile: File) {
                     copyFunction.findParameterByName(name)!!
                 }
                 .let {
+                    @Suppress("UNCHECKED_CAST")
                     copyFunction.callBy(it + (copyFunction.instanceParameter!! to original)) as T
                 }
         }

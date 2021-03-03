@@ -39,8 +39,17 @@ private fun <T : Any> injectEnvVarsIntoDataClass(value: T): T {
 fun String.injectEnvVars(): StringWithInjectedVars {
     return varRegex
         .replace(this) {
-            it.groupValues.let { (entireMatch, varName) ->
-                System.getenv(varName) ?: entireMatch
+            val (entireMatch, escapedChar, varName) = it.groupValues
+            when {
+                escapedChar.isNotEmpty() -> {
+                    escapedChar
+                }
+                varName.isNotEmpty() -> {
+                    System.getenv(varName) ?: entireMatch
+                }
+                else -> {
+                    entireMatch
+                }
             }
         }
         .let { StringWithInjectedVars(it) }
@@ -58,4 +67,4 @@ inline class FileConfigWithInjectedVars(
     val fileConfigWithInjectedVars: FileConfig
 )
 
-private val varRegex = Regex("\\$([A-Z][A-Z\\d_]*)")
+private val varRegex = Regex("""\\(.)|\$([A-Z][A-Z\d_]+)""")

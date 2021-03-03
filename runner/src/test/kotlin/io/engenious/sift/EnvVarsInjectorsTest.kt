@@ -39,6 +39,40 @@ class EnvVarsInjectorsTest {
     }
 
     @Test
+    fun escapedVarsAreNotReplaced() {
+        val (name, _) = System.getenv().entries.first()
+        assertEquals(
+            "$$name",
+            "\\$$name".injectEnvVars().string
+        )
+    }
+
+    @Test
+    fun doubleEscapedVarsAreReplaced() {
+        val (name, value) = System.getenv().entries.first()
+        assertEquals(
+            """\$value""",
+            """\\${"$"}$name""".injectEnvVars().string
+        )
+    }
+
+    @Test
+    fun doubleEscapeIsReplaced() {
+        assertEquals(
+            """aaBB\ccDD""",
+            """aaBB\\ccDD""".injectEnvVars().string
+        )
+    }
+
+    @Test
+    fun varPrefixAtTheEndIsNotReplaced() {
+        assertEquals(
+            """aaBBccDD$""",
+            """aaBBccDD$""".injectEnvVars().string
+        )
+    }
+
+    @Test
     fun varNameBoundedBySpecialChars() {
         val (name, value) = System.getenv().entries.first()
         assertEquals(

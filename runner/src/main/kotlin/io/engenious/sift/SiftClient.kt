@@ -1,5 +1,6 @@
 package io.engenious.sift
 
+import io.engenious.sift.FileConfig.TestStatus
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_INT
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
 import kotlinx.serialization.Serializable
@@ -72,11 +73,12 @@ class SiftClient(private val token: String) {
         val bodyLens = RequestSerializer.autoBody<TestListRequest>().toLens()
         Request(Method.POST, "$baseUrl/public")
             .header("token", token)
+            .query("status", TestStatus.QUARANTINED.name.toUpperCase())
             .with(bodyLens of TestListRequest(testCases))
             .run(client)
     }
 
-    fun getEnabledTests(testPlan: String, status: FileConfig.TestStatus): Set<TestIdentifier> {
+    fun getEnabledTests(testPlan: String, status: TestStatus): Set<TestIdentifier> {
         // TODO: implement retry
         return Request(Method.GET, "$baseUrl/public")
             .header("token", token)

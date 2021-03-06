@@ -17,7 +17,7 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
-class Sift(private val configFile: File) {
+class Sift(private val configFile: File, private val allowInsecureTls: Boolean) {
     fun list(): Int {
 
         val config = requestConfig().injectEnvVars()
@@ -66,7 +66,8 @@ class Sift(private val configFile: File) {
     private fun requestOrchestratorConfig(
         config: FileConfigWithInjectedVars
     ) = SiftClient(
-        config.fileConfigWithInjectedVars.token
+        config.fileConfigWithInjectedVars.token,
+        allowInsecureTls
     ).getConfiguration(config.fileConfigWithInjectedVars.testPlan)
 
     fun run(): Int {
@@ -75,7 +76,12 @@ class Sift(private val configFile: File) {
         val status = finalizedConfig.mergedConfigWithInjectedVars.status
             ?: throw SerializationException("Field 'status' in the configuration file is required to run tests")
 
-        val siftClient by lazy { SiftClient(finalizedConfig.mergedConfigWithInjectedVars.token) }
+        val siftClient by lazy {
+            SiftClient(
+                finalizedConfig.mergedConfigWithInjectedVars.token,
+                allowInsecureTls
+            )
+        }
 
         return conveyor
             .prepare(

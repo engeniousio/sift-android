@@ -15,8 +15,15 @@ import org.http4k.core.then
 import org.http4k.core.with
 import org.http4k.format.ConfigurableKotlinxSerialization
 import org.http4k.lens.LensFailure
+import java.security.SecureRandom
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
-class SiftClient(private val token: String) {
+class SiftClient(private val token: String, allowInsecureTls: Boolean) {
     private val baseUrl = "https://staging.api.orchestrator.engenious.io"
 
     private object RequestSerializer : ConfigurableKotlinxSerialization({
@@ -62,11 +69,51 @@ class SiftClient(private val token: String) {
                     }
             )
         }
+        .also {
+            if (allowInsecureTls) {
+                it.sslTrustAnything()
+            }
+        }
         .build()
         .let { OkHttp(it) }
         .let {
             responseValidator.then(it)
         }
+
+    private fun OkHttpClient.Builder.sslTrustAnything(): OkHttpClient.Builder = try {
+        val trustAllCerts: Array<TrustManager> = arrayOf(
+            object : X509TrustManager {
+                @Throws(CertificateException::class)
+                override fun checkClientTrusted(
+                    chain: Array<X509Certificate>?,
+                    authType: String?
+                ) {
+                    // no op, because everything is trusted
+                }
+
+                @Throws(CertificateException::class)
+                override fun checkServerTrusted(
+                    chain: Array<X509Certificate?>?,
+                    authType: String?
+                ) {
+                    // no op, because everything is trusted
+                }
+
+                override fun getAcceptedIssuers(): Array<X509Certificate?> = arrayOfNulls(0)
+            }
+        )
+
+        val sslContext: SSLContext = SSLContext.getInstance("SSL")
+        sslContext.init(null, trustAllCerts, SecureRandom())
+
+        val sslSocketFactory: SSLSocketFactory = sslContext.socketFactory
+
+        this
+            .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier { _, _ -> true }
+    } catch (e: Exception) {
+        throw java.lang.RuntimeException(e)
+    }
 
     fun postTests(testCases: Set<TestIdentifier>) {
         // TODO: implement retry

@@ -25,7 +25,6 @@ fun main(args: Array<String>) {
     val sift = Sift(config)
 
     val exitCode = when (command) {
-        Command.INIT -> sift.initOrchestrator()
         Command.LIST -> sift.list()
         Command.RUN -> sift.run()
     }
@@ -33,7 +32,6 @@ fun main(args: Array<String>) {
 }
 
 enum class Command {
-    INIT,
     LIST,
     RUN
 }

@@ -40,27 +40,6 @@ class Sift(private val configFile: File) {
         return if (collectedTests.isNotEmpty()) 0 else 1
     }
 
-    fun initOrchestrator(): Int {
-        val config = requestConfig().injectEnvVars()
-        val tongsConfiguration = Configuration.Builder()
-            .setupCommonTongsConfiguration(config)
-            .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
-            .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
-            .build(true)
-
-        Tongs(tongsConfiguration).run()
-
-        val collectedTests = ListingPlugin.collectedTests
-        return if (collectedTests.isEmpty()) {
-            1
-        } else {
-            SiftClient(config.mergedConfigWithInjectedVars.token).run {
-                postTests(collectedTests)
-            }
-            0
-        }
-    }
-
     private fun requestConfig(): MergedConfig {
         val config = try {
             val json = Json {
@@ -75,7 +54,7 @@ class Sift(private val configFile: File) {
 
         return config.fileConfigWithInjectedVars.let {
             val testPlan = it.testPlan
-            if (it.token.isNotEmpty() && !testPlan.isNullOrEmpty()) {
+            if (it.token.isNotEmpty() && testPlan.isNotEmpty()) {
                 val orchestratorConfig = requestOrchestratorConfig(config)
                 mergeConfigs(it, orchestratorConfig)
             } else {
@@ -88,12 +67,11 @@ class Sift(private val configFile: File) {
         config: FileConfigWithInjectedVars
     ) = SiftClient(
         config.fileConfigWithInjectedVars.token
-    ).getConfiguration(config.fileConfigWithInjectedVars.testPlan!!)
+    ).getConfiguration(config.fileConfigWithInjectedVars.testPlan)
 
     fun run(): Int {
         val finalizedConfig: MergedConfigWithInjectedVars = requestConfig().injectEnvVars()
         val testPlan = finalizedConfig.mergedConfigWithInjectedVars.testPlan
-            ?: throw SerializationException("Field 'testPlan' in the configuration file is required to run tests")
         val status = finalizedConfig.mergedConfigWithInjectedVars.status
             ?: throw SerializationException("Field 'status' in the configuration file is required to run tests")
 

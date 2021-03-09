@@ -36,7 +36,7 @@ class ConfigMergersTest {
     @Test
     fun mergeWithOverridingList() {
         val newNode = FileConfig.Node.RemoteNode(
-            "otherNode", "host", 77, "user", "pass", "deploy", "sdk",
+            "otherNode", "host", 77, "user", "pass", "path", "deploy", "sdk",
             emptyMap(), FileConfig.UdidLists(emptyList(), emptyList())
         )
         val overridingConfig = emptyOrchestratorConfig.copy(nodes = listOf(newNode))
@@ -69,7 +69,7 @@ class ConfigMergersTest {
             rerunFailedTest = 5,
             nodes = listOf(
                 FileConfig.Node.RemoteNode(
-                    "name", "host", 77, "user", "pass", "deploy", "sdk",
+                    "name", "host", 77, "user", "pass", "path", "deploy", "sdk",
                     emptyMap(), FileConfig.UdidLists(emptyList(), emptyList())
                 )
             ),
@@ -78,7 +78,7 @@ class ConfigMergersTest {
             testsBucket = 7,
             testsExecutionTimeout = 100
         )
-        private val emptyOrchestratorConfig = OrchestratorConfig(
+        private val emptyOrchestratorConfig = SiftClient.OrchestratorConfig(
             testRetryLimit = DEFAULT_INT,
             tearDownScriptPath = DEFAULT_STRING,
             setUpScriptPath = DEFAULT_STRING,

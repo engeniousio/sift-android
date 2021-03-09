@@ -24,11 +24,16 @@ fun main(args: Array<String>) {
         "allow-insecure-tls",
         description = "USE FOR DEBUGGING ONLY, disable protection from Man-in-the-middle(MITM) attacks"
     ).default(false)
+    val useDevApi by parser.option(
+        ArgType.Boolean,
+        "developer",
+        description = "use experimental, in development, version of Orchestrator"
+    ).default(false)
 
     parser.parse(args)
 
     val config = File(configPath)
-    val sift = Sift(config, allowInsecureTls)
+    val sift = Sift(config, allowInsecureTls, !useDevApi)
 
     val exitCode = when (command) {
         Command.LIST -> sift.list()

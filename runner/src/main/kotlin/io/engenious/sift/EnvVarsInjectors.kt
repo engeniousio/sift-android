@@ -45,7 +45,7 @@ fun String.injectEnvVars(): StringWithInjectedVars {
                     escapedChar
                 }
                 varName.isNotEmpty() -> {
-                    System.getenv(varName) ?: entireMatch
+                System.getenv(varName) ?: entireMatch
                 }
                 else -> {
                     entireMatch

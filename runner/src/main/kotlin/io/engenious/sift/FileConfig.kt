@@ -83,7 +83,8 @@ data class FileConfig(
             val host: String,
             val port: Int,
             val username: String,
-            val password: String,
+            @Deprecated("Will be replaced with pathToCertificate in 1.0") val password: String? = null,
+            val pathToCertificate: String? = null,
             val deploymentPath: String,
 
             override val androidSdkPath: String,

@@ -3,6 +3,7 @@ package io.engenious.sift
 import io.engenious.sift.FileConfig.TestStatus
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_INT
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
+import io.engenious.sift.run.ResultData
 import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -23,21 +24,27 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-class SiftClient(private val token: String, allowInsecureTls: Boolean) {
-    private val baseUrl = "https://staging.api.orchestrator.engenious.io"
+open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
+    protected open val baseUrl = "https://staging.api.orchestrator.engenious.io"
 
-    private object RequestSerializer : ConfigurableKotlinxSerialization({
+    companion object {
+        const val siftPlatform = "ANDROID"
+
+        fun TestIdentifier.toSerialized() = "$`package`/$`class`/$method"
+    }
+
+    protected object RequestSerializer : ConfigurableKotlinxSerialization({
         encodeDefaults = true
         ignoreUnknownKeys = true
         coerceInputValues = true
     })
 
-    private object SuccessSerializer : ConfigurableKotlinxSerialization({
+    protected object SuccessSerializer : ConfigurableKotlinxSerialization({
         ignoreUnknownKeys = true
         coerceInputValues = true
     })
 
-    private object ErrorSerializer : ConfigurableKotlinxSerialization({
+    protected object ErrorSerializer : ConfigurableKotlinxSerialization({
         ignoreUnknownKeys = true
     })
 
@@ -58,13 +65,13 @@ class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             }
         }
     }
-    private val client = OkHttpClient.Builder()
+    protected val client = OkHttpClient.Builder()
         .followRedirects(true)
         .let {
             it.addInterceptor(
                 HttpLoggingInterceptor()
-                    .apply { // TODO: only enable in debug mode
-                        setLevel(HttpLoggingInterceptor.Level.BODY)
+                    .apply { // TODO: only enable in verbose mode
+                        setLevel(HttpLoggingInterceptor.Level.HEADERS)
                         redactHeader("token")
                     }
             )
@@ -115,7 +122,7 @@ class SiftClient(private val token: String, allowInsecureTls: Boolean) {
         throw java.lang.RuntimeException(e)
     }
 
-    fun postTests(testCases: Set<TestIdentifier>) {
+    open fun postTests(testCases: Set<TestIdentifier>) {
         // TODO: implement retry
         val bodyLens = RequestSerializer.autoBody<TestListRequest>().toLens()
         Request(Method.POST, "$baseUrl/public")
@@ -125,7 +132,7 @@ class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             .run(client)
     }
 
-    fun getEnabledTests(testPlan: String, status: TestStatus): Set<TestIdentifier> {
+    open fun getEnabledTests(testPlan: String, status: TestStatus): Map<TestIdentifier, Int> {
         // TODO: implement retry
         return Request(Method.GET, "$baseUrl/public")
             .header("token", token)
@@ -135,22 +142,32 @@ class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             .run(client)
             .decodeBody<RunSettingsResponse>()
             .tests
-            .map {
-                TestIdentifier.fromSerialized(it)
+            .associate {
+                TestIdentifier.fromSerialized(it) to -1
             }
-            .toSet()
     }
 
-    fun postResults(resultMap: Map<TestIdentifier, Boolean>) {
+    open fun postResults(testPlan: String, result: ResultData) {
         // TODO: implement retry
         val bodyLens = RequestSerializer.autoBody<TestRunResult>().toLens()
+        val simplifiedResults = result.results
+            .mapValues {
+                when (it.value.result.status) {
+                    Status.PASSED, Status.PASSED_AFTER_RETRYING -> true
+                    Status.FAILED, Status.ERRORED -> false
+                    Status.SKIPPED -> null
+                }
+            }
+            .filterValues { it != null }
+            .mapValues { it.value!! }
+
         Request(Method.POST, "$baseUrl/public/result")
             .header("token", token)
-            .with(bodyLens of TestRunResult(resultMap))
+            .with(bodyLens of TestRunResult(simplifiedResults))
             .run(client)
     }
 
-    fun getConfiguration(testPlan: String): OrchestratorConfig {
+    open fun getConfiguration(testPlan: String): OrchestratorConfig {
         // TODO: implement retry
         val request = Request(Method.GET, "$baseUrl/public")
             .header("token", token)
@@ -166,74 +183,73 @@ class SiftClient(private val token: String, allowInsecureTls: Boolean) {
         }
     }
 
-    private inline fun <reified T : Any> Response.decodeBody(): T = SuccessSerializer.autoBody<T>().toLens()(this)
-}
+    protected inline fun <reified T : Any> Response.decodeBody(): T = SuccessSerializer.autoBody<T>().toLens()(this)
 
-private fun TestIdentifier.Companion.fromSerialized(it: String): TestIdentifier {
-    val (`package`, `class`, method) = it.split("/", limit = 3)
-    return TestIdentifier(`package`, `class`, method)
-}
-private fun TestIdentifier.toSerialized() = "$`package`/$`class`/$method"
+    fun TestIdentifier.Companion.fromSerialized(it: String): TestIdentifier {
+        val (`package`, `class`, method) = it.split("/", limit = 3)
+        return TestIdentifier(`package`, `class`, method)
+    }
 
-private const val siftPlatform = "ANDROID"
+    @Serializable
+    private data class TestListRequest constructor(
+        val platform: String = siftPlatform,
+        val tests: List<String>
+    ) {
+        constructor(test: Collection<TestIdentifier>) : this(
+            tests = test.map { it.toSerialized() }
+        )
+    }
 
-@Serializable
-private data class TestListRequest constructor(
-    val platform: String = siftPlatform,
-    val tests: List<String>
-) {
-    constructor(test: Collection<TestIdentifier>) : this(
-        tests = test.map { it.toSerialized() }
+    @Serializable
+    private data class TestRunResult constructor(
+        val testResults: Map<String, Boolean>,
+        val platform: String = siftPlatform
+    ) {
+        constructor(runResults: Map<TestIdentifier, Boolean>) : this(
+            runResults.mapKeys { it.key.toSerialized() },
+            siftPlatform
+        )
+    }
+
+    @Serializable
+    private data class RunSettingsResponse(
+        val tests: List<String>
     )
-}
 
-@Serializable
-private data class TestRunResult constructor(
-    val testResults: Map<String, Boolean>,
-    val platform: String = siftPlatform
-) {
-    constructor(runResults: Map<TestIdentifier, Boolean>) : this(
-        runResults.mapKeys { it.key.toSerialized() },
-        siftPlatform
+    @Serializable
+    data class OrchestratorConfig(
+        private val appPackage: String = DEFAULT_STRING,
+        private val testPackage: String = DEFAULT_STRING,
+        private val poollingStrategy: String = DEFAULT_STRING,
+        override val testsBucket: Int = DEFAULT_INT,
+        override val outputDirectoryPath: String = DEFAULT_STRING,
+        override val globalRetryLimit: Int = DEFAULT_INT,
+        private val testRetryLimit: Int = DEFAULT_INT,
+        override val testsExecutionTimeout: Int = DEFAULT_INT,
+        override val setUpScriptPath: String = DEFAULT_STRING,
+        override val tearDownScriptPath: String = DEFAULT_STRING,
+        override val reportTitle: String = DEFAULT_STRING,
+        override val reportSubtitle: String = DEFAULT_STRING,
+
+        override val nodes: List<FileConfig.Node> = emptyList()
+    ) : MergeableConfigFields {
+        override val applicationPackage: String
+            get() = appPackage
+
+        override val testApplicationPackage: String
+            get() = testPackage
+
+        override val rerunFailedTest: Int
+            get() = testRetryLimit
+
+        override val poolingStrategy: String
+            get() = poollingStrategy
+    }
+
+    @Serializable
+    data class Error(
+        val message: String
     )
+
+    open fun createRun(testPlan: String): Int = -1
 }
-
-@Serializable
-private data class RunSettingsResponse(
-    val tests: List<String>
-)
-
-@Serializable
-data class OrchestratorConfig(
-    private val appPackage: String = DEFAULT_STRING,
-    private val testPackage: String = DEFAULT_STRING,
-    private val poollingStrategy: String = DEFAULT_STRING,
-    override val testsBucket: Int = DEFAULT_INT,
-    override val outputDirectoryPath: String = DEFAULT_STRING,
-    override val globalRetryLimit: Int = DEFAULT_INT,
-    private val testRetryLimit: Int = DEFAULT_INT,
-    override val testsExecutionTimeout: Int = DEFAULT_INT,
-    override val setUpScriptPath: String = DEFAULT_STRING,
-    override val tearDownScriptPath: String = DEFAULT_STRING,
-    override val reportTitle: String = DEFAULT_STRING,
-    override val reportSubtitle: String = DEFAULT_STRING,
-
-    override val nodes: List<FileConfig.Node> = emptyList()
-) : MergeableConfigFields {
-    override val applicationPackage: String
-        get() = appPackage
-
-    override val testApplicationPackage: String
-        get() = testPackage
-
-    override val rerunFailedTest: Int
-        get() = testRetryLimit
-
-    override val poolingStrategy: String
-        get() = poollingStrategy
-}
-
-@Serializable
-data class Error(
-    val message: String
-)

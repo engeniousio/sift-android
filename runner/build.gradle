@@ -61,6 +61,7 @@ compileTestKotlin {
 }
 
 application {
+    applicationName = 'sift'
     mainClassName = "io.engenious.sift.MainCliKt"
 }
 run {

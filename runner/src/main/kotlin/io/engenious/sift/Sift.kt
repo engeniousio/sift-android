@@ -6,6 +6,7 @@ import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
+import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -17,7 +18,11 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
-class Sift(private val configFile: File) {
+class Sift(
+    private val configFile: File,
+    private val allowInsecureTls: Boolean,
+    private val prodClient: Boolean
+) {
     fun list(): Int {
 
         val config = requestConfig().injectEnvVars()
@@ -40,27 +45,6 @@ class Sift(private val configFile: File) {
         return if (collectedTests.isNotEmpty()) 0 else 1
     }
 
-    fun initOrchestrator(): Int {
-        val config = requestConfig().injectEnvVars()
-        val tongsConfiguration = Configuration.Builder()
-            .setupCommonTongsConfiguration(config)
-            .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
-            .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
-            .build(true)
-
-        Tongs(tongsConfiguration).run()
-
-        val collectedTests = ListingPlugin.collectedTests
-        return if (collectedTests.isEmpty()) {
-            1
-        } else {
-            SiftClient(config.mergedConfigWithInjectedVars.token).run {
-                postTests(collectedTests)
-            }
-            0
-        }
-    }
-
     private fun requestConfig(): MergedConfig {
         val config = try {
             val json = Json {
@@ -75,7 +59,7 @@ class Sift(private val configFile: File) {
 
         return config.fileConfigWithInjectedVars.let {
             val testPlan = it.testPlan
-            if (it.token.isNotEmpty() && !testPlan.isNullOrEmpty()) {
+            if (it.token.isNotEmpty() && testPlan.isNotEmpty()) {
                 val orchestratorConfig = requestOrchestratorConfig(config)
                 mergeConfigs(it, orchestratorConfig)
             } else {
@@ -86,35 +70,51 @@ class Sift(private val configFile: File) {
 
     private fun requestOrchestratorConfig(
         config: FileConfigWithInjectedVars
-    ) = SiftClient(
-        config.fileConfigWithInjectedVars.token
-    ).getConfiguration(config.fileConfigWithInjectedVars.testPlan!!)
+    ): SiftClient.OrchestratorConfig {
+        return createSiftClient(config.fileConfigWithInjectedVars.token)
+            .getConfiguration(config.fileConfigWithInjectedVars.testPlan)
+    }
+
+    private fun createSiftClient(token: String): SiftClient {
+        return if (prodClient) {
+            SiftClient(token, allowInsecureTls)
+        } else {
+            SiftDevClient(token, allowInsecureTls)
+        }
+    }
 
     fun run(): Int {
         val finalizedConfig: MergedConfigWithInjectedVars = requestConfig().injectEnvVars()
         val testPlan = finalizedConfig.mergedConfigWithInjectedVars.testPlan
-            ?: throw SerializationException("Field 'testPlan' in the configuration file is required to run tests")
         val status = finalizedConfig.mergedConfigWithInjectedVars.status
             ?: throw SerializationException("Field 'status' in the configuration file is required to run tests")
 
-        val siftClient by lazy { SiftClient(finalizedConfig.mergedConfigWithInjectedVars.token) }
+        val siftClient by lazy {
+            createSiftClient(finalizedConfig.mergedConfigWithInjectedVars.token)
+        }
 
         return conveyor
             .prepare(
                 {
-                    setupRunTongsConfiguration(finalizedConfig)
+                    setupCommonTongsConfiguration(finalizedConfig)
+                    finalizedConfig.mergedConfigWithInjectedVars.let { config ->
+                        ifValueSupplied(config.reportTitle) { withTitle(it) }
+                        ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
+                    }
                 },
                 TestCaseCollectingPlugin,
                 { allTests ->
                     siftClient.run {
                         postTests(allTests)
-                        getEnabledTests(testPlan, status)
+                        val enabledTests = getEnabledTests(testPlan, status)
+                        val runId = createRun(testPlan)
+                        RunData(runId, enabledTests)
                     }
                 },
                 FilteringTestCasePlugin,
                 ResultCollectingPlugin(),
-                { results ->
-                    siftClient.postResults(results)
+                { result ->
+                    siftClient.postResults(testPlan, result)
                 }
             )
             .run(withWarnings = true)
@@ -154,15 +154,6 @@ class Sift(private val configFile: File) {
             withCoverageEnabled(false)
             withPoolingStrategy(it.tongsPoolStrategy())
             withDdmTermination(true)
-        }
-        return this
-    }
-
-    private fun Configuration.Builder.setupRunTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
-        merged.mergedConfigWithInjectedVars.let { it ->
-            setupCommonTongsConfiguration(merged)
-            ifValueSupplied(it.reportTitle) { withTitle(it) }
-            ifValueSupplied(it.reportSubtitle) { withSubtitle(it) }
         }
         return this
     }

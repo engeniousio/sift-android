@@ -1,3 +1,4 @@
 rootProject.name = 'sift'
 
 include ':runner'
+include ':ondevice'

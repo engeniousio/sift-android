@@ -48,8 +48,8 @@
 ### Requirements:
  - Android SDK
  - Java 8
- - Test APK should have `androidTestImplementation 'com.github.TarCV.tongs:tongs-ondevice:0.5'` dependency
-  <br/>(This dependency will be optional in the future)
+ - Test APK should have `androidTestImplementation 'com.github.engeniousio.sift:sift-ondevice'` dependency
+  <br/>(optional, add it to run tests with complicated names or use various QoL helpers)
 
 ### How to Build:
 - `./gradlew assemble`

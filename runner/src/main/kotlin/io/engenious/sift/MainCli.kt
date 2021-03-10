@@ -2,6 +2,7 @@ package io.engenious.sift
 
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
+import kotlinx.cli.default
 import kotlinx.cli.required
 import java.io.File
 import kotlin.system.exitProcess
@@ -18,14 +19,23 @@ fun main(args: Array<String>) {
         "c",
         "Path to the configuration file"
     ).required()
+    val allowInsecureTls by parser.option(
+        ArgType.Boolean,
+        "allow-insecure-tls",
+        description = "USE FOR DEBUGGING ONLY, disable protection from Man-in-the-middle(MITM) attacks"
+    ).default(false)
+    val useDevApi by parser.option(
+        ArgType.Boolean,
+        "developer",
+        description = "use experimental, in development, version of Orchestrator"
+    ).default(false)
 
     parser.parse(args)
 
     val config = File(configPath)
-    val sift = Sift(config)
+    val sift = Sift(config, allowInsecureTls, !useDevApi)
 
     val exitCode = when (command) {
-        Command.INIT -> sift.initOrchestrator()
         Command.LIST -> sift.list()
         Command.RUN -> sift.run()
     }
@@ -33,7 +43,6 @@ fun main(args: Array<String>) {
 }
 
 enum class Command {
-    INIT,
     LIST,
     RUN
 }

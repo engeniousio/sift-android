@@ -2,6 +2,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
     id 'application'
 }
+apply plugin: "org.jetbrains.kotlin.jvm"
 
 group 'io.engenious.sift'
 version '0.1-SNAPSHOT'
@@ -31,6 +32,12 @@ dependencies {
             strictly("079e78ec2c81ef586da18f239771833e986a3e74")
         }
     }
+    implementation("com.github.engeniousio.tongs:tongs-plugin-android") {
+        version {
+            strictly("079e78ec2c81ef586da18f239771833e986a3e74")
+        }
+    }
+    implementation("com.android.tools.ddms:ddmlib:22.0") // greater version from the above plugin is actually used
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.1"
     implementation "org.http4k:http4k-client-okhttp:${http4kVersion}"
@@ -40,6 +47,7 @@ dependencies {
     implementation "org.http4k:http4k-multipart:${http4kVersion}"
     implementation "com.squareup.okhttp3:logging-interceptor:4.9.0" // TODO: same version as OkHttpClient
     implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation 'org.slf4j:slf4j-log4j12:1.7.21'
     implementation 'junit:junit:4.12'
 }
 
@@ -53,6 +61,7 @@ compileTestKotlin {
 }
 
 application {
+    applicationName = 'sift'
     mainClassName = "io.engenious.sift.MainCliKt"
 }
 run {

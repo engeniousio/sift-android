@@ -41,7 +41,7 @@ interface MergeableConfigFields {
 @Serializable
 data class FileConfig(
     val token: String,
-    val testPlan: String? = null,
+    val testPlan: String = "default_android_plan",
     val status: TestStatus? = null,
 
     override val applicationPackage: String = DEFAULT_STRING,
@@ -83,7 +83,8 @@ data class FileConfig(
             val host: String,
             val port: Int,
             val username: String,
-            val password: String,
+            @Deprecated("Will be replaced with pathToCertificate in 1.0") val password: String? = null,
+            val pathToCertificate: String? = null,
             val deploymentPath: String,
 
             override val androidSdkPath: String,

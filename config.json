@@ -3,7 +3,6 @@
   "testPlan": "<TEST PLAN>",
   "status": "enabled",
 
-  "androidSdkPath": "<SDK PATH>",
   "applicationPackage": "<APK PATH>",
   "testApplicationPackage": "<TEST APK PATH>",
   "outputDirectoryPath": "sift-result",
@@ -25,6 +24,7 @@
       "port": 22,
       "username": "node-1",
       "password": "password",
+      "androidSdkPath": "<SDK PATH>",
       "deploymentPath": "path where all necessary stuff will be stored on the node",
       "UDID": {
         "devices": [

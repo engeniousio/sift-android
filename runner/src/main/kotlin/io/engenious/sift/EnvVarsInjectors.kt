@@ -1,9 +1,5 @@
 package io.engenious.sift
 
-import io.engenious.sift.Sift.Companion.dataClassToMap
-import io.engenious.sift.Sift.Companion.mapPropertyValues
-import io.engenious.sift.Sift.Companion.mapToDataClass
-
 fun MergedConfig.injectEnvVars(): MergedConfigWithInjectedVars {
     return MergedConfigWithInjectedVars(
         this.mergedConfig
@@ -45,7 +41,7 @@ fun String.injectEnvVars(): StringWithInjectedVars {
                     escapedChar
                 }
                 varName.isNotEmpty() -> {
-                System.getenv(varName) ?: entireMatch
+                    System.getenv(varName) ?: entireMatch
                 }
                 else -> {
                     entireMatch

@@ -38,7 +38,7 @@ dependencies {
         }
     }
     implementation("com.android.tools.ddms:ddmlib:22.0") // greater version from the above plugin is actually used
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.2.1")
+    implementation "com.github.ajalt.clikt:clikt:3.0.1"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.1"
     implementation "org.http4k:http4k-client-okhttp:${http4kVersion}"
     implementation "org.http4k:http4k-core:${http4kVersion}"
@@ -53,7 +53,7 @@ dependencies {
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
-    kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn"]
+    kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn", "-Xinline-classes"]
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"

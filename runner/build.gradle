@@ -53,7 +53,7 @@ dependencies {
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
-    kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn"]
+    kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn", "-Xinline-classes"]
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"

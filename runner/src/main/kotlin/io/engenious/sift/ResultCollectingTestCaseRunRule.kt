@@ -5,14 +5,18 @@ import com.github.tarcv.tongs.api.result.FileType
 import com.github.tarcv.tongs.api.result.ImageReportData
 import com.github.tarcv.tongs.api.result.TestCaseFile
 import com.github.tarcv.tongs.api.result.TestCaseRunResult
-import com.github.tarcv.tongs.api.run.*
+import com.github.tarcv.tongs.api.run.ResultStatus
+import com.github.tarcv.tongs.api.run.TestCaseRunRule
+import com.github.tarcv.tongs.api.run.TestCaseRunRuleAfterArguments
+import com.github.tarcv.tongs.api.run.TestCaseRunRuleContext
+import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
 import com.github.tarcv.tongs.system.adb.CollectingShellOutputReceiver
 import io.engenious.sift.run.ResultData
 import io.engenious.sift.run.RunData
 import java.io.File
 
-class ResultCollectingPlugin: Conveyor.Plugin<RunData, ResultData>(),
-    TestCaseRunRuleFactory<TestCaseRunRule> {
+class ResultCollectingPlugin :
+    Conveyor.Plugin<RunData, ResultData>(), TestCaseRunRuleFactory<TestCaseRunRule> {
     // This plugin should not advance the conveyor by itself,
     // instead the conveyor is advanced automatically once the current test run is complete
 
@@ -137,7 +141,7 @@ class FilledTestResult(
     val result: Result
 )
 
-object ScreenshotFileType: FileType {
+object ScreenshotFileType : FileType {
     override fun getDirectory(): String = "screenshots"
 
     override fun getSuffix(): String = "png"

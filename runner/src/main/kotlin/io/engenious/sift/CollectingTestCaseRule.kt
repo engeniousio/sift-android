@@ -5,13 +5,12 @@ import com.github.tarcv.tongs.api.testcases.TestCase
 import com.github.tarcv.tongs.api.testcases.TestCaseRule
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleContext
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
-import io.engenious.sift.run.ResultData
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.HashSet
 
-object TestCaseCollectingPlugin: Conveyor.Plugin<Unit, MutableSet<TestIdentifier>>(),
-    TestCaseRuleFactory<TestCaseRule> {
+object TestCaseCollectingPlugin :
+    Conveyor.Plugin<Unit, MutableSet<TestIdentifier>>(), TestCaseRuleFactory<TestCaseRule> {
     override fun initStorage(): MutableSet<TestIdentifier> = Collections.synchronizedSet(HashSet<TestIdentifier>())
 
     override fun testCaseRules(context: TestCaseRuleContext): Array<out TestCaseRule> {

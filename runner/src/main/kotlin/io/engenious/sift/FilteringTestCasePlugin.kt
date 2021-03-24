@@ -7,7 +7,7 @@ import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
 import io.engenious.sift.run.RunData
 import java.util.concurrent.atomic.AtomicBoolean
 
-object FilteringTestCasePlugin: Conveyor.Plugin<RunData, RunData>(), TestCaseRuleFactory<TestCaseRule> {
+object FilteringTestCasePlugin : Conveyor.Plugin<RunData, RunData>(), TestCaseRuleFactory<TestCaseRule> {
     override fun testCaseRules(context: TestCaseRuleContext): Array<out TestCaseRule> {
         return arrayOf(object : TestCaseRule {
             val shouldAdvance = AtomicBoolean(true)

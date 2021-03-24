@@ -1,6 +1,9 @@
 package io.engenious.sift
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.output.HelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.ProcessedArgument
 import com.github.ajalt.clikt.parameters.arguments.RawArgument
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -25,10 +28,31 @@ import java.nio.file.Files
 import java.util.Locale
 import kotlin.system.exitProcess
 
-object SiftMain : CliktCommand(help = "Command to execute") {
+object SiftMain : CliktCommand(help = "Run tests distributed across nodes and devices") {
     val mode by argument().enumWithHelp<Mode>("Where to get the run configuration from")
     val command by argument().enumWithHelp<Command>("Command to execute")
     val orchestratorOptions by OrchestratorGroup() // TODO
+
+    init {
+        context {
+            helpFormatter = object : CliktHelpFormatter() {
+                override fun formatHelp(
+                    prolog: String,
+                    epilog: String,
+                    parameters: List<HelpFormatter.ParameterHelp>,
+                    programName: String
+                ) = buildString {
+                    addUsage(parameters, programName)
+                    addProlog(prolog)
+                    addCommands(parameters)
+                    addArguments(parameters)
+                    addOptions(parameters)
+                    addEpilog(epilog)
+                }
+
+            }
+        }
+    }
 
     override fun run() {
         val command = when (command) {

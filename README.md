@@ -14,7 +14,6 @@
     "token": "Orchestrator token",
     "testPlan": "Orchestrator test plan name",
     "status": "test status to include in the run (enabled, disabled, quarantined)",
-    "androidSdkPath": "path to the Android SDK root directory",
     "outputDirectoryPath": "path to the directory where tests results will be collected",
     "applicationPackage": "path to the APK of the application under test",
     "testApplicationPackage": "path to the test APK (the androidTest one)",
@@ -31,6 +30,7 @@
             "port": 22, // (not implemented yet)
             "username": "node-1", // (not implemented yet)
             "password": "password", // (not implemented yet)
+            "androidSdkPath": "path to the Android SDK root directory",
             "deploymentPath": "path where all necessary stuff will be stored on the node", // (not implemented yet)
             "UDID": {
                         "devices": ["devices udid, can be null"],
@@ -48,8 +48,9 @@
 ### Requirements:
  - Android SDK
  - Java 8
- - Test APK should have `androidTestImplementation 'com.github.engeniousio.sift:sift-ondevice'` dependency
+ - Test APK should have `androidTestImplementation 'io.engenious.sift-android:ondevice:$VERSION'` dependency
+   (or `'com.github.engeniousio.sift-android:ondevice:$VERSION'` for SNAPSHOT versions)
   <br/>(optional, add it to run tests with complicated names or use various QoL helpers)
 
 ### How to Build:
-- `./gradlew assemble`
+- `./gradlew installDist`

@@ -1,11 +1,18 @@
 package io.engenious.sift
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.arguments.ProcessedArgument
+import com.github.ajalt.clikt.parameters.arguments.RawArgument
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.help
+import com.github.ajalt.clikt.parameters.groups.OptionGroup
+import com.github.ajalt.clikt.parameters.groups.provideDelegate
+import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import com.github.ajalt.clikt.parameters.types.file
+import com.github.ajalt.clikt.parameters.types.enum
 import com.github.tarcv.tongs.Configuration
 import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
@@ -13,43 +20,75 @@ import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.IOException
 import java.nio.file.Files
+import java.util.Locale
 import kotlin.system.exitProcess
 
-object SiftMain : BaseSiftCommand(help = "Command to execute") {
+object SiftMain : CliktCommand(help = "Command to execute") {
+    val mode by argument().enumWithHelp<Mode>("Where to get the run configuration from")
+    val command by argument().enumWithHelp<Command>("Command to execute")
+    val orchestratorOptions by OrchestratorGroup() // TODO
+
     override fun run() {
-        // no op
+        val command = when (command) {
+            Command.LIST -> Sift.List
+            Command.RUN -> Sift.Run
+        }
+        command.apply {
+            options = orchestratorOptions
+            run()
+        }
+    }
+
+    enum class Mode(private val help: String, val group: OptionGroup) {
+        ORCHESTRATOR("From Orchestrator", OrchestratorGroup());
+
+        override fun toString(): String = help
+    }
+    enum class Command(private val help: String) {
+        LIST("Print all available tests"),
+        RUN("Run specified tests");
+
+        override fun toString(): String = help
     }
 }
 
-abstract class BaseSiftCommand(help: String, name: String? = null) : CliktCommand(
-    printHelpOnEmptyArgs = true,
-    help = help,
-    name = name
-)
+class OrchestratorGroup : OptionGroup("Orchestrator specific options") {
+    val token by option().required()
+    val testPlan by option().default("default_android_plan")
+    val status by option()
+        .enum<OrchestratorConfig.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
+        .default(OrchestratorConfig.TestStatus.ENABLED)
 
-abstract class Sift(
-    help: String,
-    name: String? = null,
-) : BaseSiftCommand(help = help, name = name) {
-    protected val configFile by option("--config", "-c").file(mustBeReadable = true)
-        .help("Path to the configuration file")
-        .required()
-
-    private val allowInsecureTls by option(hidden = true).flag(default = false)
+    val allowInsecureTls by option(hidden = true).flag(default = false)
         .help("USE FOR DEBUGGING ONLY, disable protection from Man-in-the-middle(MITM) attacks")
 
     private val developer: Boolean by option(hidden = true).flag(default = false)
         .help("use experimental, in development, instance of Orchestrator")
 
-    private val prodClient by lazy { !developer }
+    val prodClient by lazy { !developer }
+}
 
-    object List : Sift(help = "List all tests in the test package") {
+private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: String): ProcessedArgument<T, T> {
+    val converter: (T) -> String = { it.name.toLowerCase(Locale.ROOT) }
+    val maxLength = T::class.java.enumConstants.maxOf { converter(it).length }
+    val choicesHelp = T::class.java.enumConstants.joinToString("\n") {
+        val choice = converter(it)
+        val padding = " ".repeat(4 + maxLength - choice.length)
+
+        "- $choice$padding$it"
+    }
+    return this.enum(key = converter)
+        .help("\n```\n$message\n$choicesHelp\n```\n")
+}
+
+abstract class Sift : Runnable {
+    lateinit var options: OrchestratorGroup
+
+    object List : Sift() {
         override fun run() {
-            val config = requestConfig(configFile).injectEnvVars()
+            val config = requestConfig(options.token, options.testPlan).injectEnvVars()
             val tongsConfiguration = Configuration.Builder()
                 .setupCommonTongsConfiguration(config)
                 .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
@@ -70,15 +109,12 @@ abstract class Sift(
         }
     }
 
-    object Run : Sift(help = "Run tests according to the current configuration") {
+    object Run : Sift() {
         override fun run() {
-            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig(configFile).injectEnvVars()
-            val testPlan = finalizedConfig.mergedConfigWithInjectedVars.testPlan
-            val status = finalizedConfig.mergedConfigWithInjectedVars.status
-                ?: throw SerializationException("Field 'status' in the configuration file is required to run tests")
+            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig(options.token, options.testPlan).injectEnvVars()
 
             val siftClient by lazy {
-                createSiftClient(finalizedConfig.mergedConfigWithInjectedVars.token)
+                createSiftClient(options.token)
             }
 
             conveyor
@@ -94,15 +130,15 @@ abstract class Sift(
                     { allTests ->
                         siftClient.run {
                             postTests(allTests)
-                            val enabledTests = getEnabledTests(testPlan, status)
-                            val runId = createRun(testPlan)
+                            val enabledTests = getEnabledTests(options.testPlan, options.status)
+                            val runId = createRun(options.testPlan)
                             RunData(runId, enabledTests)
                         }
                     },
                     FilteringTestCasePlugin,
                     ResultCollectingPlugin(),
                     { result ->
-                        siftClient.postResults(testPlan, result)
+                        siftClient.postResults(options.testPlan, result)
                     }
                 )
                 .run(withWarnings = true)
@@ -113,46 +149,21 @@ abstract class Sift(
         }
     }
 
-    protected fun requestConfig(configFile: File): MergedConfig {
-        val config = try {
-            val json = Json {
-                ignoreUnknownKeys = true
-            }
-            json
-                .decodeFromString(FileConfig.serializer(), configFile.readText())
-                .injectEnvVarsToNonMergableFields()
-        } catch (e: IOException) {
-            throw RuntimeException("Failed to read the configuration file '$configFile'", e)
-        }
-
-        return config.fileConfigWithInjectedVars.let {
-            val testPlan = it.testPlan
-            if (it.token.isNotEmpty() && testPlan.isNotEmpty()) {
-                val orchestratorConfig = requestOrchestratorConfig(config)
-                mergeConfigs(it, orchestratorConfig)
-            } else {
-                mergeConfigs(it, null)
-            }
-        }
-    }
-
-    private fun requestOrchestratorConfig(
-        config: FileConfigWithInjectedVars
-    ): SiftClient.OrchestratorConfig {
-        return createSiftClient(config.fileConfigWithInjectedVars.token)
-            .getConfiguration(config.fileConfigWithInjectedVars.testPlan)
+    protected fun requestConfig(token: String, testPlan: String): OrchestratorConfig {
+        return createSiftClient(token)
+            .getConfiguration(testPlan)
     }
 
     protected fun createSiftClient(token: String): SiftClient {
-        return if (prodClient) {
-            SiftClient(token, allowInsecureTls)
+        return if (options.prodClient) {
+            SiftClient(token, options.allowInsecureTls)
         } else {
-            SiftDevClient(token, allowInsecureTls)
+            SiftDevClient(token, options.allowInsecureTls)
         }
     }
 }
 
-private fun FileConfig.tongsPoolStrategy(): PoolingStrategy {
+private fun OrchestratorConfig.tongsPoolStrategy(): PoolingStrategy {
     return PoolingStrategy().apply {
         manual = ManualPooling().apply {
             groupings = mapOf(
@@ -174,9 +185,9 @@ private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedCo
             withAndroidSdk(File(localNode.androidSdkPath))
             withTestRunnerArguments(localNode.environmentVariables)
         }
-        ifValueSupplied(it.applicationPackage) { withApplicationApk(File(it)) }
-        ifValueSupplied(it.testApplicationPackage) { withInstrumentationApk(File(it)) }
-        ifValueSupplied(it.rerunFailedTest) { withRetryPerTestCaseQuota(it) }
+        ifValueSupplied(it.appPackage) { withApplicationApk(File(it)) }
+        ifValueSupplied(it.testPackage) { withInstrumentationApk(File(it)) }
+        ifValueSupplied(it.testRetryLimit) { withRetryPerTestCaseQuota(it) }
         ifValueSupplied(it.globalRetryLimit) { withTotalAllowedRetryQuota(it) }
         ifValueSupplied(it.testsExecutionTimeout) { withTestOutputTimeout(it * 1_000) }
         ifValueSupplied(it.outputDirectoryPath) { withOutput(File(it)) }
@@ -189,7 +200,7 @@ private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedCo
 
 private const val tempEmptyDirectoryName = "sift"
 
-private fun Iterable<FileConfig.Node>.singleLocalNode(): FileConfig.Node {
+private fun Iterable<OrchestratorConfig.Node>.singleLocalNode(): OrchestratorConfig.Node {
     return this.singleOrNull()
         ?: throw SerializationException(
             "Exactly one node (localhost) should be specified under the 'nodes' key" +

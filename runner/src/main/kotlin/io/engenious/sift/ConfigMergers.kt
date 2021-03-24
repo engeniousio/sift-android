@@ -6,40 +6,6 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
-fun mergeConfigs(fileConfig: FileConfig, orchestratorConfig: MergeableConfigFields?): MergedConfig {
-    if (orchestratorConfig == null) {
-        return MergedConfig(fileConfig)
-    }
-
-    val orchestratorValues = dataClassToMap(orchestratorConfig)
-    return fileConfig.mapPropertyValues { (name, defaultValue) ->
-        val overridingValue = orchestratorValues[name]
-
-        assert(defaultValue != null)
-        if (overridingValue == null) {
-            return@mapPropertyValues defaultValue
-        }
-        if (defaultValue!!::class != overridingValue::class &&
-            (defaultValue !is List<*> || overridingValue !is List<*>)
-        ) {
-            throw RuntimeException("Orchestrator provided invalid value for '$name' key")
-        }
-
-        val shouldOverride = isNonDefaultValue(overridingValue)
-            ?: throw RuntimeException("Orchestrator provided invalid value for '$name' key")
-
-        if (shouldOverride) {
-            overridingValue
-        } else {
-            return@mapPropertyValues defaultValue
-        }
-    }.let { MergedConfig(it) }
-}
-
-inline class MergedConfig(
-    val mergedConfig: FileConfig
-)
-
 fun <T : Any> dataClassToMap(value: T): Map<String, Any?> {
     return value::class.memberProperties
         .associate {
@@ -49,9 +15,9 @@ fun <T : Any> dataClassToMap(value: T): Map<String, Any?> {
         }
 }
 
-fun FileConfig.mapPropertyValues(
+fun OrchestratorConfig.mapPropertyValues(
     transform: (Map.Entry<String, Any?>) -> Any?
-): FileConfig {
+): OrchestratorConfig {
     return dataClassToMap(this)
         .mapValues(transform)
         .mapToDataClass(this)
@@ -74,8 +40,7 @@ fun isNonDefaultValue(value: Any): Boolean? {
     return when (value) {
         is Number -> value != 0
         is String -> value.isNotEmpty()
-        is kotlin.collections.List<*> -> value.isNotEmpty()
-        MergeableConfigFields.DEFAULT_NODES -> false
+        is List<*> -> value.isNotEmpty()
         else -> null
     }
 }

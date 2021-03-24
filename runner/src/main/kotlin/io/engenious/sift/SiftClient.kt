@@ -1,8 +1,6 @@
 package io.engenious.sift
 
-import io.engenious.sift.FileConfig.TestStatus
-import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_INT
-import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
+import io.engenious.sift.OrchestratorConfig.TestStatus
 import io.engenious.sift.run.ResultData
 import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
@@ -215,36 +213,6 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
     private data class RunSettingsResponse(
         val tests: List<String>
     )
-
-    @Serializable
-    data class OrchestratorConfig(
-        private val appPackage: String = DEFAULT_STRING,
-        private val testPackage: String = DEFAULT_STRING,
-        private val poollingStrategy: String = DEFAULT_STRING,
-        override val testsBucket: Int = DEFAULT_INT,
-        override val outputDirectoryPath: String = DEFAULT_STRING,
-        override val globalRetryLimit: Int = DEFAULT_INT,
-        private val testRetryLimit: Int = DEFAULT_INT,
-        override val testsExecutionTimeout: Int = DEFAULT_INT,
-        override val setUpScriptPath: String = DEFAULT_STRING,
-        override val tearDownScriptPath: String = DEFAULT_STRING,
-        override val reportTitle: String = DEFAULT_STRING,
-        override val reportSubtitle: String = DEFAULT_STRING,
-
-        override val nodes: List<FileConfig.Node> = emptyList()
-    ) : MergeableConfigFields {
-        override val applicationPackage: String
-            get() = appPackage
-
-        override val testApplicationPackage: String
-            get() = testPackage
-
-        override val rerunFailedTest: Int
-            get() = testRetryLimit
-
-        override val poolingStrategy: String
-            get() = poollingStrategy
-    }
 
     @Serializable
     data class Error(

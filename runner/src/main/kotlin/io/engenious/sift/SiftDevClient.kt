@@ -29,12 +29,12 @@ class SiftDevClient(private val token: String, allowInsecureTls: Boolean) : Sift
             .header("token", token)
             .query("platform", siftPlatform)
 
-            .query("status", FileConfig.TestStatus.QUARANTINED.name.toUpperCase(Locale.ROOT))
+            .query("status", OrchestratorConfig.TestStatus.QUARANTINED.name.toUpperCase(Locale.ROOT))
             .with(bodyLens of TestListRequest(testCases))
             .run(client)
     }
 
-    override fun getEnabledTests(testPlan: String, status: FileConfig.TestStatus): Map<TestIdentifier, Int> {
+    override fun getEnabledTests(testPlan: String, status: OrchestratorConfig.TestStatus): Map<TestIdentifier, Int> {
         // TODO: implement retry
         val request = Request(Method.GET, "$baseUrl/v1/sift")
             .header("token", token)

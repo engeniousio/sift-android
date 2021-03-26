@@ -21,12 +21,11 @@ data class OrchestratorConfig(
     val testRetryLimit: Int,
     val testsBucket: Int = 1, // TODO: implement this option
     val globalRetryLimit: Int,
-    val poolingStrategy: String, // TODO: implement this option
     val reportTitle: String = "Test report",
     val reportSubtitle: String = " ",
     val testsExecutionTimeout: Int,
-    val setUpScriptPath: String, // TODO: implement this option
-    val tearDownScriptPath: String, // TODO: implement this option
+//    val setUpScriptPath: String, // TODO: implement this option
+//    val tearDownScriptPath: String, // TODO: implement this option
 
     val nodes: List<Node>
 ) {

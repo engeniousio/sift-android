@@ -136,12 +136,12 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             .header("token", token)
             .query("platform", siftPlatform)
 
-            .query("status", FileConfig.TestStatus.QUARANTINED.name.toUpperCase(Locale.ROOT))
+            .query("status", OrchestratorConfig.TestStatus.QUARANTINED.name.toUpperCase(Locale.ROOT))
             .with(bodyLens of TestListRequest(testCases))
             .run(client)
     }
 
-    open fun getEnabledTests(testPlan: String, status: FileConfig.TestStatus): Map<TestIdentifier, Int> {
+    open fun getEnabledTests(testPlan: String, status: OrchestratorConfig.TestStatus): Map<TestIdentifier, Int> {
         // TODO: implement retry
         val request = Request(Method.GET, "$baseUrl/v1/sift")
             .header("token", token)
@@ -334,36 +334,6 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
     private data class CreateRunResponse(
         val runIndex: Int
     )
-
-    @Serializable
-    data class OrchestratorConfig(
-        private val appPackage: String = MergeableConfigFields.DEFAULT_STRING,
-        private val testPackage: String = MergeableConfigFields.DEFAULT_STRING,
-        private val poollingStrategy: String = MergeableConfigFields.DEFAULT_STRING,
-        override val testsBucket: Int = MergeableConfigFields.DEFAULT_INT,
-        override val outputDirectoryPath: String = MergeableConfigFields.DEFAULT_STRING,
-        override val globalRetryLimit: Int = MergeableConfigFields.DEFAULT_INT,
-        private val testRetryLimit: Int = MergeableConfigFields.DEFAULT_INT,
-        override val testsExecutionTimeout: Int = MergeableConfigFields.DEFAULT_INT,
-        override val setUpScriptPath: String = MergeableConfigFields.DEFAULT_STRING,
-        override val tearDownScriptPath: String = MergeableConfigFields.DEFAULT_STRING,
-        override val reportTitle: String = MergeableConfigFields.DEFAULT_STRING,
-        override val reportSubtitle: String = MergeableConfigFields.DEFAULT_STRING,
-
-        override val nodes: List<FileConfig.Node> = emptyList()
-    ) : MergeableConfigFields {
-        override val applicationPackage: String
-            get() = appPackage
-
-        override val testApplicationPackage: String
-            get() = testPackage
-
-        override val rerunFailedTest: Int
-            get() = testRetryLimit
-
-        override val poolingStrategy: String
-            get() = poollingStrategy
-    }
 
     @Serializable
     data class Error(

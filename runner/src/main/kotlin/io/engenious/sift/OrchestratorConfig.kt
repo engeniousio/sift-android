@@ -1,8 +1,5 @@
 package io.engenious.sift
 
-import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_INT
-import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_NODES
-import io.engenious.sift.MergeableConfigFields.Companion.DEFAULT_STRING
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -16,49 +13,23 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonObject
 import kotlin.reflect.full.memberProperties
 
-interface MergeableConfigFields {
-    val rerunFailedTest: Int
-    val applicationPackage: String
-    val testApplicationPackage: String
-    val outputDirectoryPath: String
-    val setUpScriptPath: String
-    val tearDownScriptPath: String
-    val nodes: List<FileConfig.Node>
-    val globalRetryLimit: Int?
-    val testsExecutionTimeout: Int?
-    val poolingStrategy: String?
-    val reportTitle: String?
-    val reportSubtitle: String?
-    val testsBucket: Int
-
-    companion object {
-        const val DEFAULT_INT = 0
-        const val DEFAULT_STRING = ""
-        val DEFAULT_NODES = emptyList<FileConfig.Node>()
-    }
-}
-
 @Serializable
-data class FileConfig(
-    val token: String,
-    val testPlan: String = "default_android_plan",
-    val status: TestStatus? = null,
+data class OrchestratorConfig(
+    val appPackage: String,
+    val testPackage: String,
+    val outputDirectoryPath: String = "sift-result",
+    val testRetryLimit: Int,
+    val testsBucket: Int = 1, // TODO: implement this option
+    val globalRetryLimit: Int,
+    val poolingStrategy: String, // TODO: implement this option
+    val reportTitle: String = "Test report",
+    val reportSubtitle: String = " ",
+    val testsExecutionTimeout: Int,
+    val setUpScriptPath: String, // TODO: implement this option
+    val tearDownScriptPath: String, // TODO: implement this option
 
-    override val applicationPackage: String = DEFAULT_STRING,
-    override val testApplicationPackage: String = DEFAULT_STRING,
-    override val outputDirectoryPath: String = "sift-result",
-    override val rerunFailedTest: Int = DEFAULT_INT,
-    override val testsBucket: Int = 1, // TODO: implement this option
-    override val globalRetryLimit: Int = DEFAULT_INT,
-    override val poolingStrategy: String = DEFAULT_STRING, // TODO: implement this option
-    override val reportTitle: String = "Test report",
-    override val reportSubtitle: String = " ",
-    override val testsExecutionTimeout: Int = DEFAULT_INT,
-    override val setUpScriptPath: String = DEFAULT_STRING, // TODO: implement this option
-    override val tearDownScriptPath: String = DEFAULT_STRING, // TODO: implement this option
-
-    override val nodes: List<Node> = DEFAULT_NODES // TODO: implement this option
-) : MergeableConfigFields {
+    val nodes: List<Node>
+) {
     @Serializable(with = Node.Companion::class)
     sealed class Node {
         abstract val androidSdkPath: String

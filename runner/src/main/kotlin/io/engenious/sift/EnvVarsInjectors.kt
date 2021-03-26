@@ -1,30 +1,18 @@
 package io.engenious.sift
 
-import io.engenious.sift.Sift.Companion.dataClassToMap
-import io.engenious.sift.Sift.Companion.mapPropertyValues
-import io.engenious.sift.Sift.Companion.mapToDataClass
-
-fun MergedConfig.injectEnvVars(): MergedConfigWithInjectedVars {
+fun OrchestratorConfig.injectEnvVars(): MergedConfigWithInjectedVars {
     return MergedConfigWithInjectedVars(
-        this.mergedConfig
+        this
             .mapPropertyValues { (_, value) -> injectEnvVarsIfPossible(value) }
-            .let { FileConfigWithInjectedVars(it) }.fileConfigWithInjectedVars
+            .let { FileConfigWithInjectedVars(it) }.orchestratorConfigWithInjectedVars
     )
-}
-
-fun FileConfig.injectEnvVarsToNonMergableFields(): FileConfigWithInjectedVars {
-    return dataClassToMap(this)
-        .filterKeys { key -> MergeableConfigFields::class.members.none { it.name == key } }
-        .mapValues { (_, value) -> injectEnvVarsIfPossible(value) }
-        .mapToDataClass(this)
-        .let { FileConfigWithInjectedVars(it) }
 }
 
 private fun injectEnvVarsIfPossible(value: Any?): Any? = when (value) {
     is String -> value.injectEnvVars().string
-    is FileConfig.Node.ThisNode -> injectEnvVarsIntoDataClass(value)
-    is FileConfig.Node.RemoteNode -> injectEnvVarsIntoDataClass(value)
-    is FileConfig.UdidLists -> injectEnvVarsIntoDataClass(value)
+    is OrchestratorConfig.Node.ThisNode -> injectEnvVarsIntoDataClass(value)
+    is OrchestratorConfig.Node.RemoteNode -> injectEnvVarsIntoDataClass(value)
+    is OrchestratorConfig.UdidLists -> injectEnvVarsIntoDataClass(value)
     is Map<*, *> -> value.mapValues { (_, value) -> injectEnvVarsIfPossible(value) }
     is List<*> -> value.map { injectEnvVarsIfPossible(it) }
     else -> value
@@ -60,11 +48,11 @@ inline class StringWithInjectedVars(
 )
 
 inline class MergedConfigWithInjectedVars(
-    val mergedConfigWithInjectedVars: FileConfig
+    val mergedConfigWithInjectedVars: OrchestratorConfig
 )
 
 inline class FileConfigWithInjectedVars(
-    val fileConfigWithInjectedVars: FileConfig
+    val orchestratorConfigWithInjectedVars: OrchestratorConfig
 )
 
 private val varRegex = Regex("""\\(.)|\$([A-Z][A-Z\d_]+)""")

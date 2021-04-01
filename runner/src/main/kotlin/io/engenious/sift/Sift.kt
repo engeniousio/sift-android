@@ -21,6 +21,7 @@ import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import io.engenious.sift.Conveyor.Companion.conveyor
+import io.engenious.sift.list.NoOpPlugin
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
 import java.io.File
@@ -49,13 +50,13 @@ object SiftMain : CliktCommand(help = "Run tests distributed across nodes and de
                     addOptions(parameters)
                     addEpilog(epilog)
                 }
-
             }
         }
     }
 
     override fun run() {
         val command = when (command) {
+            Command.INIT -> Sift.Init
             Command.LIST -> Sift.List
             Command.RUN -> Sift.Run
         }
@@ -71,6 +72,7 @@ object SiftMain : CliktCommand(help = "Run tests distributed across nodes and de
         override fun toString(): String = help
     }
     enum class Command(private val help: String) {
+        INIT("Initialize Orchestrator with the list of available tests (or add newly added ones)"),
         LIST("Print all available tests"),
         RUN("Run specified tests");
 
@@ -130,6 +132,40 @@ abstract class Sift : Runnable {
 
             val exitcode = if (collectedTests.isNotEmpty()) 0 else 1
             exitProcess(exitcode)
+        }
+    }
+
+    object Init : Sift() {
+        override fun run() { // TODO: share code with Run command
+            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig(options.token, options.testPlan).injectEnvVars()
+
+            val siftClient by lazy {
+                createSiftClient(options.token)
+            }
+
+            conveyor
+                .prepare(
+                    {
+                        setupCommonTongsConfiguration(finalizedConfig)
+                        finalizedConfig.mergedConfigWithInjectedVars.let { config ->
+                            ifValueSupplied(config.reportTitle) { withTitle(it) }
+                            ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
+                        }
+                    },
+                    TestCaseCollectingPlugin,
+                    { allTests ->
+                        siftClient.run {
+                            postTests(allTests)
+                        }
+                    },
+                    NoOpPlugin,
+                    { }
+                )
+                .run(withWarnings = true)
+                .let { result ->
+                    val exitCode = if (result) 0 else 1
+                    exitProcess(exitCode)
+                }
         }
     }
 

@@ -71,7 +71,7 @@ class Conveyor private constructor() {
 
             conveyor.finalizeAndAdvanceConveyor<Unit>()
             try {
-                return Tongs(configuration).run()
+                return Tongs(configuration).run(allowThrows = true)
             } finally {
                 if (conveyor.queue.isNotEmpty()) {
                     conveyor.finalizeAndAdvanceConveyor<Any>()

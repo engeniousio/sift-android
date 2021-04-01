@@ -20,10 +20,15 @@ import com.github.tarcv.tongs.Configuration
 import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
+import com.github.tarcv.tongs.api.testcases.NoTestCasesFoundException
+import com.github.tarcv.tongs.pooling.NoDevicesForPoolException
+import com.github.tarcv.tongs.pooling.NoPoolLoaderConfiguredException
 import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.list.NoOpPlugin
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.util.Locale
@@ -66,8 +71,8 @@ object SiftMain : CliktCommand(help = "Run tests distributed across nodes and de
         }
     }
 
-    enum class Mode(private val help: String, val group: OptionGroup) {
-        ORCHESTRATOR("From Orchestrator", OrchestratorGroup());
+    enum class Mode(private val help: String) {
+        ORCHESTRATOR("From Orchestrator");
 
         override fun toString(): String = help
     }
@@ -112,6 +117,10 @@ private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: Strin
 abstract class Sift : Runnable {
     lateinit var options: OrchestratorGroup
 
+    companion object {
+        private val logger: Logger = LoggerFactory.getLogger(Sift::class.java)
+    }
+
     object List : Sift() {
         override fun run() {
             val config = requestConfig(options.token, options.testPlan).injectEnvVars()
@@ -121,14 +130,26 @@ abstract class Sift : Runnable {
                 .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
                 .build(true)
 
-            Tongs(tongsConfiguration).run()
+            handleCommonErrors {
+                try {
+                    Tongs(tongsConfiguration).run(allowThrows = true)
+                    logger.error("Failed to list available tests")
+                    1
+                } catch (e: NoTestCasesFoundException) {
+                    // This is expected result
+                    0
+                }
+            }.let { runExitCode ->
+                if (runExitCode != 0) {
+                    exitProcess(runExitCode)
+                }
+            }
 
             val collectedTests = ListingPlugin.collectedTests
             collectedTests.asSequence()
                 .map { "${it.`package`}.${it.`class`}#${it.method}" }
                 .sorted()
-
-            collectedTests.forEach { println(it) }
+                .forEach { println(it) }
 
             val exitcode = if (collectedTests.isNotEmpty()) 0 else 1
             exitProcess(exitcode)
@@ -161,9 +182,17 @@ abstract class Sift : Runnable {
                     NoOpPlugin,
                     { }
                 )
-                .run(withWarnings = true)
-                .let { result ->
-                    val exitCode = if (result) 0 else 1
+                .apply {
+                    val exitCode = handleCommonErrors {
+                        try {
+                            run(withWarnings = true)
+                            logger.error("Failed to list available tests")
+                            1
+                        } catch (e: NoTestCasesFoundException) {
+                            // This is expected result
+                            0
+                        }
+                    }
                     exitProcess(exitCode)
                 }
         }
@@ -201,12 +230,33 @@ abstract class Sift : Runnable {
                         siftClient.postResults(options.testPlan, result)
                     }
                 )
-                .run(withWarnings = true)
-                .let { result ->
-                    val exitCode = if (result) 0 else 1
+                .apply {
+                    val exitCode = handleCommonErrors {
+                        val result = run(withWarnings = true)
+                        when {
+                            result -> 0
+                            else -> 1
+                        }
+                    }
                     exitProcess(exitCode)
                 }
         }
+    }
+
+    protected fun handleCommonErrors(runBlock: () -> Int) = try {
+        runBlock()
+    } catch (e: NoPoolLoaderConfiguredException) {
+        logger.error("Configuring devices and pools failed", e)
+        1
+    } catch (e: NoDevicesForPoolException) {
+        logger.error("Configuring devices and pools failed", e)
+        1
+    } catch (e: NoTestCasesFoundException) {
+        logger.error("Error when trying to find test classes", e)
+        1
+    } catch (e: Exception) {
+        logger.error("Error while executing a test run", e)
+        1
     }
 
     protected fun requestConfig(token: String, testPlan: String): OrchestratorConfig {

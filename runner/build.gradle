@@ -20,22 +20,22 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation("com.github.engeniousio.tongs:tongs-runner") {
         version {
-            strictly("079e78ec2c81ef586da18f239771833e986a3e74")
+            strictly("12b0ca312ebc2d277e6e2361f45e24349b8480fb")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-common") {
         version {
-            strictly("079e78ec2c81ef586da18f239771833e986a3e74")
+            strictly("12b0ca312ebc2d277e6e2361f45e24349b8480fb")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-plugin-api") {
         version {
-            strictly("079e78ec2c81ef586da18f239771833e986a3e74")
+            strictly("12b0ca312ebc2d277e6e2361f45e24349b8480fb")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-plugin-android") {
         version {
-            strictly("079e78ec2c81ef586da18f239771833e986a3e74")
+            strictly("12b0ca312ebc2d277e6e2361f45e24349b8480fb")
         }
     }
     implementation("com.android.tools.ddms:ddmlib:22.0") // greater version from the above plugin is actually used

@@ -15,6 +15,20 @@ class Conveyor private constructor() {
 
     private lateinit var queue: ArrayDeque<Worker<Any, Any>>
 
+    fun <S12 : Any, S23 : Any, S34 : Any> prepare(
+        initialConfiguration: Configuration.Builder.() -> Unit,
+        w1: Worker<Unit, S12>,
+        w2: Worker<S12, S23>,
+        w3: Worker<S23, S34>,
+        w4: Worker<S34, Unit>
+    ): ConveyorRunnable {
+        @Suppress("UNCHECKED_CAST")
+        return internalPrepare(
+            initialConfiguration,
+            listOf(w1, w2, w3, w4) as List<Worker<Any, Any>>
+        )
+    }
+
     fun <S12 : Any, S23 : Any, S34 : Any, S45 : Any> prepare(
         initialConfiguration: Configuration.Builder.() -> Unit,
         w1: Worker<Unit, S12>,
@@ -23,10 +37,18 @@ class Conveyor private constructor() {
         w4: Worker<S34, S45>,
         w5: Worker<S45, Unit>
     ): ConveyorRunnable {
-        val workerList = listOf(w1, w2, w3, w4, w5)
-
         @Suppress("UNCHECKED_CAST")
-        queue = ArrayDeque(workerList) as ArrayDeque<Worker<Any, Any>>
+        return internalPrepare(
+            initialConfiguration,
+            listOf(w1, w2, w3, w4, w5) as List<Worker<Any, Any>>
+        )
+    }
+
+    private fun internalPrepare(
+        initialConfiguration: Configuration.Builder.() -> Unit,
+        workerList: List<Worker<Any, Any>>
+    ): ConveyorRunnable {
+        queue = ArrayDeque(workerList)
 
         val plugins = workerList.filterIsInstance<Plugin<Any, Any>>()
         return ConveyorRunnable(initialConfiguration, plugins)
@@ -49,7 +71,7 @@ class Conveyor private constructor() {
 
             conveyor.finalizeAndAdvanceConveyor<Unit>()
             try {
-                return Tongs(configuration).run()
+                return Tongs(configuration).run(allowThrows = true)
             } finally {
                 if (conveyor.queue.isNotEmpty()) {
                     conveyor.finalizeAndAdvanceConveyor<Any>()

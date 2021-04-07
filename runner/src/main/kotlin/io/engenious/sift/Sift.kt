@@ -118,6 +118,8 @@ abstract class Sift : Runnable {
     lateinit var options: OrchestratorGroup
 
     companion object {
+        private const val noRunId = -1
+
         private val logger: Logger = LoggerFactory.getLogger(Sift::class.java)
     }
 
@@ -174,13 +176,18 @@ abstract class Sift : Runnable {
                         }
                     },
                     TestCaseCollectingPlugin,
-                    { allTests ->
+                    { allTests, ctx ->
+                        if (allTests.isEmpty()) {
+                            ctx.throwDeferred(RuntimeException("No tests were found in the test APK"))
+                            return@prepare RunData(noRunId, emptyMap())
+                        }
+
                         siftClient.run {
                             postTests(allTests)
                         }
                     },
                     NoOpPlugin,
-                    { }
+                    { _, _ -> }
                 )
                 .apply {
                     val exitCode = handleCommonErrors {
@@ -216,7 +223,12 @@ abstract class Sift : Runnable {
                         }
                     },
                     TestCaseCollectingPlugin,
-                    { allTests ->
+                    { allTests, ctx ->
+                        if (allTests.isEmpty()) {
+                            ctx.throwDeferred(RuntimeException("No tests were found in the test APK"))
+                            return@prepare RunData(noRunId, emptyMap())
+                        }
+
                         siftClient.run {
                             postTests(allTests)
                             val enabledTests = getEnabledTests(options.testPlan, options.status)
@@ -226,7 +238,15 @@ abstract class Sift : Runnable {
                     },
                     FilteringTestCasePlugin,
                     ResultCollectingPlugin(),
-                    { result ->
+                    { result, ctx ->
+                        if (result.runId == noRunId) {
+                            return@prepare
+                        }
+
+                        if (result.results.isEmpty()) {
+                            ctx.throwDeferred(RuntimeException("The run produced no results"))
+                            return@prepare
+                        }
                         siftClient.postResults(options.testPlan, result)
                     }
                 )

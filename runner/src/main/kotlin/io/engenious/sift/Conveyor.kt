@@ -2,13 +2,15 @@ package io.engenious.sift
 
 import com.github.tarcv.tongs.Configuration
 import com.github.tarcv.tongs.Tongs
-import java.lang.Error
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class Conveyor private constructor() {
     companion object {
         val conveyor = Conveyor()
     }
+
+    private val exceptionHolder = AtomicReference<Exception>()
 
     var storage: Any = Unit
         private set
@@ -70,8 +72,8 @@ class Conveyor private constructor() {
                 }
 
             conveyor.finalizeAndAdvanceConveyor<Unit>()
-            try {
-                return Tongs(configuration).run(allowThrows = true)
+            val result = try {
+                Tongs(configuration).run(allowThrows = true)
             } finally {
                 if (conveyor.queue.isNotEmpty()) {
                     conveyor.finalizeAndAdvanceConveyor<Any>()
@@ -80,6 +82,11 @@ class Conveyor private constructor() {
                     System.err.println("Something went wrong")
                 }
             }
+
+            conveyor.exceptionHolder.get()
+                ?.let { throw it }
+
+            return result
         }
     }
 
@@ -94,7 +101,7 @@ class Conveyor private constructor() {
 
         abstract fun initStorage(): OUT
 
-        final override fun invoke(p1: IN): OUT {
+        final override fun call(storage: IN, ctx: Conveyor): OUT {
             @Suppress("UNCHECKED_CAST")
             previousStorage = conveyor.storage as IN
 
@@ -132,13 +139,19 @@ class Conveyor private constructor() {
         requireConveyorStorage(expectedStorage)
 
         val worker = queue.removeFirst()
-        storage = worker.invoke(storage)
+        storage = worker.call(storage, this)
         if (worker !is Plugin && queue.isNotEmpty()) {
             finalizeAndAdvanceConveyor<Any>()
         }
     }
 
+    fun throwDeferred(exception: Exception) {
+        exceptionHolder.compareAndSet(null, exception)
+    }
+
     private class ConveyorError(message: String) : Error("Internal Sift error - $message")
 }
 
-typealias Worker<IN, OUT> = (IN) -> OUT
+fun interface Worker<IN, OUT> {
+    fun call(storage: IN, ctx: Conveyor): OUT
+}

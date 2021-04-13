@@ -1,4 +1,4 @@
-package io.engenious.sift.ondevice;
+package io.engenious.sift;
 
 import android.app.Instrumentation;
 import android.graphics.Bitmap;

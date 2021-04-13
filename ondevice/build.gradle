@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     id 'com.android.library'
     id 'maven-publish'
@@ -25,18 +27,38 @@ android {
     }
 }
 
+configurations {
+    internalize
+}
+
 dependencies {
-    api("com.github.engeniousio.tongs:tongs-ondevice") {
-        version {
-            strictly("b937744b93b0e2947aa27d53938def865615e3a4")
-        }
-    }
+    internalize "com.github.engeniousio.tongs:tongs-ondevice:4c7b16e2256818e326e1aaa2df3c7cfa167ddf84:sources"
 
     compileOnly "androidx.test:core:$testVersion"
+
+    //noinspection GradleDependency // match android-test dependency version
     compileOnly 'junit:junit:4.12'
 }
 
 afterEvaluate {
+    task changePackage(type: Copy) {
+        from(zipTree(project.configurations.internalize.resolve()[0])) {
+            include '**/*.java'
+            filter { line -> line.replace("com.github.tarcv.tongs", "io.engenious.sift") }
+            eachFile {
+                it.path = it.path.replace("com/github/tarcv/tongs", "io/engenious/sift")
+            }
+        }
+        into "${project.buildDir}/unjar"
+        includeEmptyDirs = false
+    }
+    tasks.javaPreCompileDebug.dependsOn(tasks.changePackage)
+    tasks.javaPreCompileRelease.dependsOn(tasks.changePackage)
+
+    android.sourceSets.main.java {
+        srcDirs += tasks.changePackage.outputs.files.singleFile
+    }
+
     publishing {
         publications {
             release(MavenPublication) {

@@ -47,8 +47,8 @@ dependencies {
     implementation "org.http4k:http4k-multipart:${http4kVersion}"
     implementation "com.squareup.okhttp3:logging-interceptor:4.9.0" // TODO: same version as OkHttpClient
     implementation "org.jetbrains.kotlin:kotlin-reflect"
-    implementation 'org.slf4j:slf4j-log4j12:1.7.21'
-    implementation 'junit:junit:4.12'
+    implementation 'org.slf4j:slf4j-log4j12:1.7.30'
+    testImplementation 'junit:junit:4.13.1'
 }
 
 compileKotlin {

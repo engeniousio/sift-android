@@ -1,7 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
     id 'application'
-    id 'maven-publish'
 }
 apply plugin: "org.jetbrains.kotlin.jvm"
 
@@ -67,13 +66,4 @@ application {
 }
 run {
     workingDir = project.getProperties().getOrDefault("workingDir", project.projectDir)
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
-            groupId = rootProject.group
-        }
-    }
 }

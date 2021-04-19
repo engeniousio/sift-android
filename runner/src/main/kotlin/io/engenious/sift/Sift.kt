@@ -16,6 +16,7 @@ import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.enum
+import com.github.tarcv.tongs.ComputedPooling
 import com.github.tarcv.tongs.Configuration
 import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
@@ -173,6 +174,7 @@ abstract class Sift : Runnable {
                         finalizedConfig.mergedConfigWithInjectedVars.let { config ->
                             ifValueSupplied(config.reportTitle) { withTitle(it) }
                             ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
+                            withPoolingStrategy(allLocalDevicesStrategy)
                         }
                     },
                     TestCaseCollectingPlugin,
@@ -297,12 +299,23 @@ private fun OrchestratorConfig.tongsPoolStrategy(): PoolingStrategy {
     return PoolingStrategy().apply {
         manual = ManualPooling().apply {
             groupings = mapOf(
-                "devices" to (
-                    nodes.singleLocalNode()
-                        .UDID
-                        ?.devices
-                        ?: emptyList()
-                    )
+                siftPoolName to (
+                        nodes.singleLocalNode()
+                            .UDID
+                            ?.devices
+                            ?: emptyList()
+                        )
+            )
+        }
+    }
+}
+
+private val allLocalDevicesStrategy: PoolingStrategy by lazy {
+    PoolingStrategy().apply {
+        computed = ComputedPooling().apply {
+            characteristic = ComputedPooling.Characteristic.api
+            groups = mapOf(
+                siftPoolName to 0
             )
         }
     }
@@ -329,6 +342,7 @@ private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedCo
 }
 
 private const val tempEmptyDirectoryName = "sift"
+private const val siftPoolName = "devices"
 
 private fun Iterable<OrchestratorConfig.Node>.singleLocalNode(): OrchestratorConfig.Node {
     return this.singleOrNull()

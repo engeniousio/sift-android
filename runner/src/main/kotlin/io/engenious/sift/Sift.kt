@@ -129,6 +129,7 @@ abstract class Sift : Runnable {
             val config = requestConfig(options.token, options.testPlan).injectEnvVars()
             val tongsConfiguration = Configuration.Builder()
                 .setupCommonTongsConfiguration(config)
+                .withPoolingStrategy(nodeDevicesStrategy(config.mergedConfigWithInjectedVars.nodes))
                 .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
                 .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
                 .build(true)
@@ -220,6 +221,7 @@ abstract class Sift : Runnable {
                     {
                         setupCommonTongsConfiguration(finalizedConfig)
                         finalizedConfig.mergedConfigWithInjectedVars.let { config ->
+                            withPoolingStrategy(nodeDevicesStrategy(config.nodes))
                             ifValueSupplied(config.reportTitle) { withTitle(it) }
                             ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
                         }
@@ -295,18 +297,16 @@ abstract class Sift : Runnable {
     }
 }
 
-private fun OrchestratorConfig.tongsPoolStrategy(): PoolingStrategy {
-    return PoolingStrategy().apply {
-        manual = ManualPooling().apply {
-            groupings = mapOf(
-                siftPoolName to (
-                        nodes.singleLocalNode()
-                            .UDID
-                            ?.devices
-                            ?: emptyList()
-                        )
-            )
-        }
+private fun nodeDevicesStrategy(nodes: List<OrchestratorConfig.Node>) = PoolingStrategy().apply {
+    manual = ManualPooling().apply {
+        groupings = mapOf(
+            siftPoolName to (
+                nodes.singleLocalNode()
+                    .UDID
+                    ?.devices
+                    ?: emptyList()
+                )
+        )
     }
 }
 
@@ -335,7 +335,6 @@ private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedCo
         ifValueSupplied(it.testsExecutionTimeout) { withTestOutputTimeout(it * 1_000) }
         ifValueSupplied(it.outputDirectoryPath) { withOutput(File(it)) }
         withCoverageEnabled(false)
-        withPoolingStrategy(it.tongsPoolStrategy())
         withDdmTermination(true)
     }
     return this

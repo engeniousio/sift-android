@@ -35,7 +35,7 @@ import java.nio.file.Files
 import java.util.Locale
 import kotlin.system.exitProcess
 
-object SiftMain : CliktCommand(help = "Run tests distributed across nodes and devices") {
+object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed across nodes and devices") {
     val mode by argument().enumWithHelp<Mode>("Where to get the run configuration from")
     val command by argument().enumWithHelp<Command>("Command to execute")
     val orchestratorOptions by OrchestratorGroup() // TODO
@@ -87,9 +87,9 @@ object SiftMain : CliktCommand(help = "Run tests distributed across nodes and de
 }
 
 class OrchestratorGroup : OptionGroup("Orchestrator specific options") {
-    val token by option().required()
-    val testPlan by option().default("default_android_plan")
-    val status by option()
+    val token by option(help = "Orchestrator token for Android. It can be viewed on Global Settings page").required()
+    val testPlan by option(help = "Orchestrator test plan name").default("default_android_plan")
+    val status by option(help = "Filter tests by status in Orchestrator (default: 'enabled')")
         .enum<OrchestratorConfig.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
         .default(OrchestratorConfig.TestStatus.ENABLED)
 

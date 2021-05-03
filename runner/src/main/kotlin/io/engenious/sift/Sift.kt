@@ -93,6 +93,10 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options") {
         .enum<OrchestratorConfig.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
         .default(OrchestratorConfig.TestStatus.ENABLED)
 
+    val initSdk: String? by option(help = "Path to Android SDK for 'init' subcommand")
+    val initSdkMissingError = "Please specify path to Android SDK with '--init-sdk' command-line option" +
+        " or ANDROID_SDK_ROOT/ANDROID_HOME environment variable"
+
     val allowInsecureTls by option(hidden = true).flag(default = false)
         .help("USE FOR DEBUGGING ONLY, disable protection from Man-in-the-middle(MITM) attacks")
 
@@ -129,6 +133,7 @@ abstract class Sift : Runnable {
             val config = requestConfig(options.token, options.testPlan).injectEnvVars()
             val tongsConfiguration = Configuration.Builder()
                 .setupCommonTongsConfiguration(config)
+                .applyLocalNodeConfiguration(config)
                 .withPoolingStrategy(nodeDevicesStrategy(config.mergedConfigWithInjectedVars.nodes))
                 .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
                 .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
@@ -172,6 +177,13 @@ abstract class Sift : Runnable {
                 .prepare(
                     {
                         setupCommonTongsConfiguration(finalizedConfig)
+
+                        val sdkPath = options.initSdk
+                            ?: System.getenv("ANDROID_SDK_ROOT").takeUnless { it.isNullOrBlank() }
+                            ?: System.getenv("ANDROID_HOME").takeUnless { it.isNullOrBlank() }
+                            ?: throw RuntimeException(options.initSdkMissingError)
+                        withAndroidSdk(File(sdkPath))
+
                         finalizedConfig.mergedConfigWithInjectedVars.let { config ->
                             ifValueSupplied(config.reportTitle) { withTitle(it) }
                             ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
@@ -220,6 +232,7 @@ abstract class Sift : Runnable {
                 .prepare(
                     {
                         setupCommonTongsConfiguration(finalizedConfig)
+                            .applyLocalNodeConfiguration(finalizedConfig)
                         finalizedConfig.mergedConfigWithInjectedVars.let { config ->
                             withPoolingStrategy(nodeDevicesStrategy(config.nodes))
                             ifValueSupplied(config.reportTitle) { withTitle(it) }
@@ -321,13 +334,19 @@ private val allLocalDevicesStrategy: PoolingStrategy by lazy {
     }
 }
 
-private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
-    merged.mergedConfigWithInjectedVars.let { it ->
-        ifValueSupplied(it.nodes) {
+private fun Configuration.Builder.applyLocalNodeConfiguration(config: MergedConfigWithInjectedVars): Configuration.Builder {
+    apply {
+        ifValueSupplied(config.mergedConfigWithInjectedVars.nodes) {
             val localNode = it.singleLocalNode()
             withAndroidSdk(File(localNode.androidSdkPath))
             withTestRunnerArguments(localNode.environmentVariables)
         }
+    }
+    return this
+}
+
+private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
+    merged.mergedConfigWithInjectedVars.let { it ->
         ifValueSupplied(it.appPackage) { withApplicationApk(File(it)) }
         ifValueSupplied(it.testPackage) { withInstrumentationApk(File(it)) }
         ifValueSupplied(it.testRetryLimit) { withRetryPerTestCaseQuota(it) }

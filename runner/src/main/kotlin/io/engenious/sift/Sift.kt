@@ -324,14 +324,16 @@ private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedCo
         withCoverageEnabled(false)
         withPoolingStrategy(it.tongsPoolStrategy())
         withDdmTermination(true)
-        withPluginConfiguration(mapOf(
-            "androidPermissionAnnotation/com.github.tarcv.tongs.runner.AndroidPermissionGrantingTestCaseRunRuleFactory" to mapOf(
-                "package" to "io.engenious.sift"
-            ),
-            "propertyAnnotations/com.github.tarcv.tongs.plugin.android.PropertiesTestCaseRuleFactory" to mapOf(
-                "package" to "io.engenious.sift"
+        withPluginConfiguration(
+            mapOf(
+                "androidPermissionAnnotation/com.github.tarcv.tongs.runner.AndroidPermissionGrantingTestCaseRunRuleFactory" to mapOf(
+                    "package" to "io.engenious.sift"
+                ),
+                "propertyAnnotations/com.github.tarcv.tongs.plugin.android.PropertiesTestCaseRuleFactory" to mapOf(
+                    "package" to "io.engenious.sift"
+                )
             )
-        ))
+        )
     }
     return this
 }

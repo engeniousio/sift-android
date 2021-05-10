@@ -1,6 +1,7 @@
 plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
     id 'application'
+    id 'maven-publish'
 }
 apply plugin: "org.jetbrains.kotlin.jvm"
 
@@ -66,4 +67,63 @@ application {
 }
 run {
     workingDir = project.getProperties().getOrDefault("workingDir", project.projectDir)
+}
+
+if (System.getenv('JITPACK')) {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                artifacts = distZip.outputs.files
+
+                pom {
+                    name = POM_NAME
+                    description = POM_DESCRIPTION
+                    url = POM_URL
+
+                    licenses {
+                        license {
+                            name = POM_LICENCE_NAME
+                            url = POM_LICENCE_URL
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            name = POM_DEVELOPER_NAME
+                            email = POM_DEVELOPER_EMAIL
+                            organization = POM_DEVELOPER_ORGANIZATION
+                            organizationUrl = POM_DEVELOPER_ORGANIZATION_URL
+                        }
+                    }
+                    scm {
+                        connection = POM_SCM_CONNECTION
+                        developerConnection = POM_SCM_DEVELOPER_CONNECTION
+                        url = POM_SCM_URL
+                    }
+                }
+            }
+        }
+
+        if (project.findProperty('signatory.keyId')) {
+            signing {
+                useGpgCmd()
+                sign publishing.publications.release
+            }
+        }
+
+        repositories {
+            maven {
+                name = 'MavenCentral'
+
+                def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+                def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+                credentials {
+                    username = System.getenv('MAVEN_USERNAME')
+                    password = System.getenv('MAVEN_PASSWORD')
+                }
+            }
+        }
+    }
 }

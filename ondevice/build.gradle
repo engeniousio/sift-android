@@ -119,7 +119,6 @@ afterEvaluate {
 
         if (project.findProperty('signatory.keyId')) {
             signing {
-                useGpgCmd()
                 sign publishing.publications.release
             }
         }

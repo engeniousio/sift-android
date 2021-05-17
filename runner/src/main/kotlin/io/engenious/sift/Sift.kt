@@ -1,6 +1,7 @@
 package io.engenious.sift
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.output.CliktHelpFormatter
 import com.github.ajalt.clikt.output.HelpFormatter
@@ -9,6 +10,7 @@ import com.github.ajalt.clikt.parameters.arguments.RawArgument
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.help
 import com.github.ajalt.clikt.parameters.groups.OptionGroup
+import com.github.ajalt.clikt.parameters.groups.cooccurring
 import com.github.ajalt.clikt.parameters.groups.provideDelegate
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
@@ -38,7 +40,8 @@ import kotlin.system.exitProcess
 object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed across nodes and devices") {
     val mode by argument().enumWithHelp<Mode>("Where to get the run configuration from")
     val command by argument().enumWithHelp<Command>("Command to execute")
-    val orchestratorOptions by OrchestratorGroup() // TODO
+    val localConfigurationOptions by ConfigurationGroup().cooccurring()
+    val orchestratorOptions by OrchestratorGroup().cooccurring()
 
     init {
         context {
@@ -67,12 +70,20 @@ object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed acro
             Command.RUN -> Sift.Run
         }
         command.apply {
-            options = orchestratorOptions
+            if (orchestratorOptions != null && localConfigurationOptions != null) {
+                throw UsageError("Only options of just one mode (local or orchestrator) should be specified")
+            }
+            options = when (mode) {
+                Mode.ORCHESTRATOR -> requireNotNull(orchestratorOptions) { "Missing Orchestrator options" }
+                Mode.CONFIG -> requireNotNull(localConfigurationOptions) { "Missing local configuration options" }
+            }
+
             run()
         }
     }
 
     enum class Mode(private val help: String) {
+        CONFIG("From a local configuration file"),
         ORCHESTRATOR("From Orchestrator");
 
         override fun toString(): String = help
@@ -86,10 +97,25 @@ object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed acro
     }
 }
 
-class OrchestratorGroup : OptionGroup("Orchestrator specific options") {
+interface ClientProvider {
+    val status: OrchestratorConfig.TestStatus
+    val testPlan: String
+
+    fun createClient(): Client
+}
+
+class ConfigurationGroup : OptionGroup("Local configuration specific options"), ClientProvider {
+    val config by option("-c", "--config", help = "Path to a configuration file").required()
+
+    override val testPlan: String = ""
+    override val status: OrchestratorConfig.TestStatus = OrchestratorConfig.TestStatus.ENABLED
+
+    override fun createClient(): Client = LocalConfigurationClient(this.config)
+}
+class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientProvider {
     val token by option(help = "Orchestrator token for Android. It can be viewed on Global Settings page").required()
-    val testPlan by option(help = "Orchestrator test plan name").default("default_android_plan")
-    val status by option(help = "Filter tests by status in Orchestrator (default: 'enabled')")
+    override val testPlan by option(help = "Orchestrator test plan name").default("default_android_plan")
+    override val status by option(help = "Filter tests by status in Orchestrator (default: 'enabled')")
         .enum<OrchestratorConfig.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
         .default(OrchestratorConfig.TestStatus.ENABLED)
 
@@ -104,6 +130,14 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options") {
         .help("use experimental, in development, instance of Orchestrator")
 
     val prodClient by lazy { !developer }
+
+    override fun createClient(): Client {
+        return if (prodClient) {
+            OrchestratorClient(token, allowInsecureTls)
+        } else {
+            OrchestratorDevClient(token, allowInsecureTls)
+        }
+    }
 }
 
 private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: String): ProcessedArgument<T, T> {
@@ -120,7 +154,7 @@ private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: Strin
 }
 
 abstract class Sift : Runnable {
-    lateinit var options: OrchestratorGroup
+    lateinit var options: ClientProvider
 
     companion object {
         private const val noRunId = -1
@@ -130,7 +164,7 @@ abstract class Sift : Runnable {
 
     object List : Sift() {
         override fun run() {
-            val config = requestConfig(options.token, options.testPlan).injectEnvVars()
+            val config = requestConfig()
             val tongsConfiguration = Configuration.Builder()
                 .setupCommonTongsConfiguration(config)
                 .applyLocalNodeConfiguration(config)
@@ -156,7 +190,7 @@ abstract class Sift : Runnable {
 
             val collectedTests = ListingPlugin.collectedTests
             collectedTests.asSequence()
-                .map { "${it.`package`}.${it.`class`}#${it.method}" }
+                .map { it.toString() }
                 .sorted()
                 .forEach { println(it) }
 
@@ -167,10 +201,17 @@ abstract class Sift : Runnable {
 
     object Init : Sift() {
         override fun run() { // TODO: share code with Run command
-            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig(options.token, options.testPlan).injectEnvVars()
+            val orchestratorOptions = options.let {
+                require(it is OrchestratorGroup) {
+                    "'init' subcommand is only supported in orchestrated mode"
+                }
+                it
+            }
+
+            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig()
 
             val siftClient by lazy {
-                createSiftClient(options.token)
+                options.createClient()
             }
 
             conveyor
@@ -178,10 +219,10 @@ abstract class Sift : Runnable {
                     {
                         setupCommonTongsConfiguration(finalizedConfig)
 
-                        val sdkPath = options.initSdk
+                        val sdkPath = orchestratorOptions.initSdk
                             ?: System.getenv("ANDROID_SDK_ROOT").takeUnless { it.isNullOrBlank() }
                             ?: System.getenv("ANDROID_HOME").takeUnless { it.isNullOrBlank() }
-                            ?: throw RuntimeException(options.initSdkMissingError)
+                            ?: throw RuntimeException(orchestratorOptions.initSdkMissingError)
                         withAndroidSdk(File(sdkPath))
 
                         finalizedConfig.mergedConfigWithInjectedVars.let { config ->
@@ -222,10 +263,10 @@ abstract class Sift : Runnable {
 
     object Run : Sift() {
         override fun run() {
-            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig(options.token, options.testPlan).injectEnvVars()
+            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig()
 
             val siftClient by lazy {
-                createSiftClient(options.token)
+                options.createClient()
             }
 
             conveyor
@@ -296,17 +337,10 @@ abstract class Sift : Runnable {
         1
     }
 
-    protected fun requestConfig(token: String, testPlan: String): OrchestratorConfig {
-        return createSiftClient(token)
-            .getConfiguration(testPlan)
-    }
-
-    protected fun createSiftClient(token: String): SiftClient {
-        return if (options.prodClient) {
-            SiftClient(token, options.allowInsecureTls)
-        } else {
-            SiftDevClient(token, options.allowInsecureTls)
-        }
+    protected fun requestConfig(): MergedConfigWithInjectedVars {
+        return options.createClient()
+            .getConfiguration(options.testPlan)
+            .injectEnvVars()
     }
 }
 

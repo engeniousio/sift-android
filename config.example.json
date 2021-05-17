@@ -1,0 +1,34 @@
+{
+  "appPackage": "path to the APK of the application under test",
+  "testPackage": "path to the test APK (the androidTest one)",
+  "outputDirectoryPath": "path to the directory where tests results will be collected",
+  "globalRetryLimit": 1,
+  "testRetryLimit": 1,
+  "testsExecutionTimeout": 120,
+  "setUpScriptPath": "script to execute on a node before each test bucket",
+  "tearDownScriptPath": "script to execute on a node after each test bucket",
+  "reportTitle": "Local HTML report title",
+  "reportSubtitle": "Local HTML report subtitle, optional",
+  "nodes":
+  [
+    {
+      "name": "Node-1",
+      "host": "172.22.22.12",
+      "port": 22,
+      "username": "node-1",
+      "pathToCertificate": "path to SSH key/certificate",
+      "deploymentPath": "path where all necessary stuff will be stored on the node",
+      "UDID": {
+        "devices": ["device serials, this is an optional key"],
+        "simulators": ["(not supported yet) names of emulators (AVDs) to use for tests, this is an optional key)"]
+      },
+      "androidSdkPath": "path to the Android SDK root directory",
+      "environmentVariables": {
+        "env1": "value1"
+      }
+    }
+  ],
+  "tests": [
+    "Identifiers of tests to be included in a test run (use 'sift config list -c config.json' to list test identifiers)"
+  ]
+}

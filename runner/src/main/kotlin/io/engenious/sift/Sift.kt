@@ -11,7 +11,6 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.help
 import com.github.ajalt.clikt.parameters.groups.OptionGroup
 import com.github.ajalt.clikt.parameters.groups.cooccurring
-import com.github.ajalt.clikt.parameters.groups.provideDelegate
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.help
@@ -28,6 +27,7 @@ import com.github.tarcv.tongs.pooling.NoDevicesForPoolException
 import com.github.tarcv.tongs.pooling.NoPoolLoaderConfiguredException
 import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.list.NoOpPlugin
+import io.engenious.sift.node.NodeCommand
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
 import org.slf4j.Logger
@@ -68,6 +68,7 @@ object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed acro
             Command.INIT -> Sift.Init
             Command.LIST -> Sift.List
             Command.RUN -> Sift.Run
+            Command._NODE -> NodeCommand
         }
         command.apply {
             if (orchestratorOptions != null && localConfigurationOptions != null) {
@@ -91,7 +92,8 @@ object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed acro
     enum class Command(private val help: String) {
         INIT("Initialize Orchestrator with the list of available tests (or add newly added ones)"),
         LIST("Print all available tests"),
-        RUN("Run specified tests");
+        RUN("Run specified tests"),
+        _NODE("");
 
         override fun toString(): String = help
     }
@@ -143,12 +145,14 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientPr
 private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: String): ProcessedArgument<T, T> {
     val converter: (T) -> String = { it.name.toLowerCase(Locale.ROOT) }
     val maxLength = T::class.java.enumConstants.maxOf { converter(it).length }
-    val choicesHelp = T::class.java.enumConstants.joinToString("\n") {
-        val choice = converter(it)
-        val padding = " ".repeat(4 + maxLength - choice.length)
+    val choicesHelp = T::class.java.enumConstants
+        .filterNot { it.toString().isBlank() }
+        .joinToString("\n") {
+            val choice = converter(it)
+            val padding = " ".repeat(4 + maxLength - choice.length)
 
-        "- $choice$padding$it"
-    }
+            "- $choice$padding$it"
+        }
     return this.enum(key = converter)
         .help("\n```\n$message\n$choicesHelp\n```\n")
 }
@@ -368,7 +372,7 @@ private val allLocalDevicesStrategy: PoolingStrategy by lazy {
     }
 }
 
-private fun Configuration.Builder.applyLocalNodeConfiguration(config: MergedConfigWithInjectedVars): Configuration.Builder {
+internal fun Configuration.Builder.applyLocalNodeConfiguration(config: MergedConfigWithInjectedVars): Configuration.Builder {
     apply {
         ifValueSupplied(config.mergedConfigWithInjectedVars.nodes) {
             val localNode = it.singleLocalNode()
@@ -379,7 +383,7 @@ private fun Configuration.Builder.applyLocalNodeConfiguration(config: MergedConf
     return this
 }
 
-private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
+internal fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
     merged.mergedConfigWithInjectedVars.let { it ->
         ifValueSupplied(it.appPackage) { withApplicationApk(File(it)) }
         ifValueSupplied(it.testPackage) { withInstrumentationApk(File(it)) }
@@ -396,7 +400,7 @@ private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedCo
 private const val tempEmptyDirectoryName = "sift"
 private const val siftPoolName = "devices"
 
-private fun Iterable<OrchestratorConfig.Node>.singleLocalNode(): OrchestratorConfig.Node {
+internal fun Iterable<OrchestratorConfig.Node>.singleLocalNode(): OrchestratorConfig.Node {
     return this.singleOrNull()
         ?: throw SerializationException(
             "Exactly one node (localhost) should be specified under the 'nodes' key" +

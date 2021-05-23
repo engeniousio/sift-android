@@ -7,7 +7,6 @@ import com.github.tarcv.tongs.api.testcases.TestCaseRuleContext
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.HashSet
 
 object TestCaseCollectingPlugin :
     Conveyor.Plugin<Unit, MutableSet<TestIdentifier>>(), TestCaseRuleFactory<TestCaseRule> {
@@ -49,7 +48,7 @@ data class TestIdentifier(
     val method: String
 ) {
     override fun toString(): String {
-        return "${`package`}/${`class`}#${method}"
+        return "${`package`}/${`class`}#$method"
     }
 
     companion object {

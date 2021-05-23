@@ -3,43 +3,45 @@
 
 ## Sift - Unit and UI Tests Parallelization
 
-### How to use:
-- `sift run --config config.json` run tests
-- `sift list --config config.json` print all tests from the test APK
+### How to use in local mode:
+- `sift config run -c config.json` run tests
+- `sift config list -c config.json` print all tests from the test APK
 
 ### Example of **config.json** file (JSON format):
 
 ```JSON5
 {
-    "token": "Orchestrator token",
-    "testPlan": "Orchestrator test plan name",
-    "status": "test status to include in the run (enabled, disabled, quarantined)",
+    "appPackage": "path to the APK of the application under test",
+    "testPackage": "path to the test APK (the androidTest one)",
     "outputDirectoryPath": "path to the directory where tests results will be collected",
-    "applicationPackage": "path to the APK of the application under test",
-    "testApplicationPackage": "path to the test APK (the androidTest one)",
-    "rerunFailedTest": 1, // attempts for retry
-    "testsBucket": 1, // number of tests which will be send on each executor at the same time (not implemented yet)
-    "testsExecutionTimeout": 120, // timeout (not implemented yet, hardcoded to 30s)
-    "setUpScriptPath": "script to execute on a node before each tests bucket", // optional (not implemented yet)
-    "tearDownScriptPath": "script to execute on a node after each tests bucket", // optional (not implemented yet)
+    "globalRetryLimit": 1, // attempts for retry for all tests in a run
+    "testRetryLimit": 1, // attempts for retry for one test
+    "testsExecutionTimeout": 120, // test timeout
+    "setUpScriptPath": "script to execute on a node before each test bucket", // optional (not implemented yet)
+    "tearDownScriptPath": "script to execute on a node after each test bucket", // optional (not implemented yet)
+    "reportTitle": "Local HTML report title",
+    "reportSubtitle": "Local HTML report subtitle, optional",
     "nodes": // array of nodes with connected devices
-    [ // only UDID.devices of the first node is used currently
+    [
         {
             "name": "Node-1", // (not implemented yet)
             "host": "172.22.22.12", // (not implemented yet)
             "port": 22, // (not implemented yet)
             "username": "node-1", // (not implemented yet)
-            "password": "password", // (not implemented yet)
-            "androidSdkPath": "path to the Android SDK root directory",
+            "pathToCertificate": "path to SSH key/certificate", // (not implemented yet)
             "deploymentPath": "path where all necessary stuff will be stored on the node", // (not implemented yet)
             "UDID": {
-                        "devices": ["devices udid, can be null"],
-                        "simulators": ["AVD names of emulators to use for tests, can be null (not supported yet)"]
+                        "devices": ["device serials, this is an optional key"],
+                        "simulators": ["(not supported yet) names of emulators (AVDs) to use for tests, this is an optional key)"]
             },
-            "environmentVariables": { // additional parameters passed to tests, optional (not supported yet)
+            "androidSdkPath": "path to the Android SDK root directory",
+            "environmentVariables": { // additional parameters passed to tests, this is an optional key
                 "env1": "value1"
             }
         }
+    ],
+    "tests": [
+        "Identifiers of tests to be included in a test run (use 'sift config list -c config.json' to list test identifiers)"
     ]
 }
 

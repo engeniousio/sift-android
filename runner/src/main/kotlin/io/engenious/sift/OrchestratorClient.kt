@@ -29,11 +29,11 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
+open class OrchestratorClient(private val token: String, allowInsecureTls: Boolean) : Client {
     protected open val baseUrl = "https://api.orchestrator.engenious.io"
 
     companion object {
-        private val logger = LoggerFactory.getLogger(SiftClient::class.java)
+        private val logger = LoggerFactory.getLogger(OrchestratorClient::class.java)
 
         const val siftPlatform = "ANDROID"
 
@@ -129,7 +129,7 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
         throw java.lang.RuntimeException(e)
     }
 
-    open fun postTests(testCases: Set<TestIdentifier>) {
+    override fun postTests(testCases: Set<TestIdentifier>) {
         // TODO: implement retry
         val bodyLens = RequestSerializer.autoBody<TestListRequest>().toLens()
         Request(Method.POST, "$baseUrl/v1/sift")
@@ -141,7 +141,7 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             .run(client)
     }
 
-    open fun getEnabledTests(testPlan: String, status: OrchestratorConfig.TestStatus): Map<TestIdentifier, Int> {
+    override fun getEnabledTests(testPlan: String, status: OrchestratorConfig.TestStatus): Map<TestIdentifier, Int> {
         // TODO: implement retry
         val request = Request(Method.GET, "$baseUrl/v1/sift")
             .header("token", token)
@@ -157,7 +157,7 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             }
     }
 
-    open fun createRun(testPlan: String): Int {
+    override fun createRun(testPlan: String): Int {
         // TODO: implement retry
         val request = Request(Method.POST, "$baseUrl/v1/sift/run")
             .header("token", token)
@@ -168,7 +168,7 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             .runIndex
     }
 
-    open fun postResults(testPlan: String, result: ResultData) {
+    override fun postResults(testPlan: String, result: ResultData) {
         val runId = result.runId
         val resultMap = result.results.values
 
@@ -262,7 +262,7 @@ open class SiftClient(private val token: String, allowInsecureTls: Boolean) {
             }
     }
 
-    open fun getConfiguration(testPlan: String): OrchestratorConfig {
+    override fun getConfiguration(testPlan: String): OrchestratorConfig {
         // TODO: implement retry
         val request = Request(Method.GET, "$baseUrl/v1/sift")
             .header("token", token)

@@ -48,7 +48,20 @@ data class TestIdentifier(
     val `class`: String,
     val method: String
 ) {
+    override fun toString(): String {
+        return "${`package`}/${`class`}#${method}"
+    }
+
     companion object {
+        fun fromString(str: String): TestIdentifier {
+            return Regex("(.+)/(.+)#(.+)")
+                .matchEntire(str)
+                ?.destructured
+                ?.let { (packageName, className, methodName) ->
+                    TestIdentifier(packageName, className, methodName)
+                }
+                ?: throw RuntimeException("Invalid test identifier format: $str")
+        }
         fun fromTestCase(testCase: TestCase): TestIdentifier {
             val `package` = testCase.testPackage
             val `class` = testCase.testClass.removePrefix("$`package`.")

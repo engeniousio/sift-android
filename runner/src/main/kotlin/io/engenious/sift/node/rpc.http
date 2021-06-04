@@ -6,3 +6,20 @@ Content-Type: application/json
   "method": "provideDevices",
   "id": 1
 }
+
+###
+POST http://localhost:8000/rpc
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "collectTests",
+  "id": 2,
+  "params": [
+    [
+      "emulator-5554"
+    ]
+  ]
+}
+
+###

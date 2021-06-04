@@ -398,7 +398,7 @@ internal fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedC
 }
 
 private const val tempEmptyDirectoryName = "sift"
-private const val siftPoolName = "devices"
+const val siftPoolName = "devices"
 
 internal fun Iterable<OrchestratorConfig.Node>.singleLocalNode(): OrchestratorConfig.Node {
     return this.singleOrNull()

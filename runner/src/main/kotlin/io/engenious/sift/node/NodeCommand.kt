@@ -17,6 +17,7 @@ object NodeCommand : Sift() {
 
         JsonRpc.auto(KotlinxSerialization, NodeErrorHandler) {
             method("provideDevices", handler(node::provideDevices))
+            method("collectTests", handler(node::collectTests))
         }
             .asServer(KtorCIO())
             .start()

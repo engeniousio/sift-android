@@ -33,7 +33,7 @@ object DeviceSerializer : KSerializer<Device> {
         encoder.encodeSerializableValue(DeviceSurrogate.serializer(), surrogate)
     }
 
-    private fun Device.deviceIdentifierAsString(): String {
+    fun Device.deviceIdentifierAsString(): String {
         val identifier = Device::class.declaredMemberFunctions
             .single { it.name == "getUniqueIdentifier" }
             .also { it.isAccessible = true }

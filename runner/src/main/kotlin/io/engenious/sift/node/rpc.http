@@ -23,3 +23,17 @@ Content-Type: application/json
 }
 
 ###
+POST http://localhost:8000/rpc
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "runTest",
+  "id": 3,
+  "params": [
+    "emulator-5554",
+    "com.github.tarcv.orderme.app.ui.tests.IntentTest#testOpenDialerForRomanov"
+  ]
+}
+
+###

@@ -1,7 +1,6 @@
 @file:UseSerializers(
     InstantSerializer::class,
     TableJsonSerializer::class,
-    TestCaseSerializer::class,
     StackTraceSerializer::class
 )
 
@@ -28,9 +27,8 @@ import com.github.tarcv.tongs.api.result.TestCaseRunResult
 import com.github.tarcv.tongs.api.result.TestReportData
 import com.github.tarcv.tongs.api.result.VideoReportData
 import com.github.tarcv.tongs.api.run.ResultStatus
-import com.github.tarcv.tongs.api.testcases.TestCase
-import com.github.tarcv.tongs.injector.system.FileManagerInjector.fileManager
 import com.github.tarcv.tongs.system.io.TestCaseFileManagerImpl
+import io.engenious.sift.node.serialization.RemoteTestCase.Companion.toTestCase
 import io.engenious.sift.node.serialization.SurrogateTestReportData.WritableTestReportData.SurrogateHtmlReportData
 import io.engenious.sift.node.serialization.SurrogateTestReportData.WritableTestReportData.SurrogateMonoTextReportData
 import io.engenious.sift.node.serialization.SurrogateTestReportData.WritableTestReportData.SurrogateTableReportData
@@ -38,6 +36,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import org.koin.core.context.KoinContextHandler
 import java.time.Instant
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
@@ -49,7 +48,7 @@ class TestCaseRunResultSerializer(
 ) {
     override fun toSurrogate(value: TestCaseRunResult) = SurrogateTestCaseRunResult(
         value.device as RemoteDevice,
-        value.testCase,
+        RemoteTestCase.fromTestCase(value.testCase),
         value.status,
         value.stackTraces,
         value.startTimestampUtc,
@@ -66,17 +65,17 @@ class TestCaseRunResultSerializer(
 
     override fun fromSurrogate(surrogate: SurrogateTestCaseRunResult): TestCaseRunResult {
         val testFileManager = TestCaseFileManagerImpl(
-            fileManager(),
+            KoinContextHandler.get().get(),
             pool,
             surrogate.device,
-            surrogate.testCase
+            surrogate.testCase.toTestCase()
         )
         val testCaseFileSerializer = TestCaseFileSerializer(testFileManager)
 
         val candidate = TestCaseRunResult(
             pool,
             surrogate.device,
-            surrogate.testCase,
+            surrogate.testCase.toTestCase(),
             surrogate.status,
             surrogate.stackTraces,
             surrogate.startTimestampUtc,
@@ -101,7 +100,7 @@ class TestCaseRunResultSerializer(
     @Serializable
     data class SurrogateTestCaseRunResult(
         val device: RemoteDevice,
-        val testCase: TestCase,
+        val testCase: RemoteTestCase,
 
         val status: ResultStatus,
         val stackTraces: List<StackTrace>,

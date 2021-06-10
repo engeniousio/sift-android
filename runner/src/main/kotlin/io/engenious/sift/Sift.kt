@@ -348,16 +348,18 @@ abstract class Sift : Runnable {
     }
 }
 
-private fun nodeDevicesStrategy(nodes: List<OrchestratorConfig.Node>) = PoolingStrategy().apply {
-    manual = ManualPooling().apply {
-        groupings = mapOf(
-            siftPoolName to (
-                nodes.singleLocalNode()
-                    .UDID
-                    ?.devices
-                    ?: emptyList()
-                )
-        )
+fun nodeDevicesStrategy(nodes: List<OrchestratorConfig.Node>, additionalSerials: List<String> = emptyList()): PoolingStrategy {
+    return PoolingStrategy().apply {
+        manual = ManualPooling().apply {
+            groupings = mapOf(
+                siftPoolName to (
+                    nodes.singleLocalNode()
+                        .UDID
+                        ?.devices
+                        ?: emptyList()
+                    ) + additionalSerials
+            )
+        }
     }
 }
 
@@ -397,7 +399,7 @@ internal fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedC
     return this
 }
 
-private const val tempEmptyDirectoryName = "sift"
+const val tempEmptyDirectoryName = "sift"
 const val siftPoolName = "devices"
 
 internal fun Iterable<OrchestratorConfig.Node>.singleLocalNode(): OrchestratorConfig.Node {

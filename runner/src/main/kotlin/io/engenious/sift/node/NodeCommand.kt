@@ -7,24 +7,36 @@ import org.http4k.jsonrpc.ErrorMessage
 import org.http4k.jsonrpc.JsonRpc
 import org.http4k.server.KtorCIO
 import org.http4k.server.asServer
+import java.util.concurrent.CountDownLatch
 import kotlin.system.exitProcess
 
 object NodeCommand : Sift() {
     override fun run() {
-        // val config = readConfigFromFile() // TODO
-        val config = requestConfig()
-        val node = Node(config)
+        val exitCode = try {
+            handleCommonErrors {
+                // val config = readConfigFromFile() // TODO
+                val config = requestConfig()
+                val shutdownSignaller = CountDownLatch(1)
+                val node = Node(config, shutdownSignaller)
 
-        JsonRpc.auto(KotlinxSerialization, NodeErrorHandler) {
-            method("provideDevices", handler(node::provideDevices))
-            method("collectTests", handler(node::collectTests))
-            method("runTest", handler(node::runTest))
+                JsonRpc.auto(KotlinxSerialization, NodeErrorHandler) {
+                    method("init", handler(node::init))
+                    method("runTest", handler(node::runTest))
+                    method("shutdown", handler(node::shutdown))
+                }
+                    .asServer(KtorCIO())
+                    .start()
+                    .use {
+                        shutdownSignaller.await()
+                    }
+
+                0
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            2
         }
-            .asServer(KtorCIO())
-            .start()
-            .block()
-
-        exitProcess(0)
+        exitProcess(exitCode)
     }
 
     object NodeErrorHandler : ErrorHandler {

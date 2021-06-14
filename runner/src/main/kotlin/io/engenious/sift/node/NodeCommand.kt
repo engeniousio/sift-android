@@ -1,6 +1,7 @@
 package io.engenious.sift.node
 
 import io.engenious.sift.Sift
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.http4k.format.KotlinxSerialization
 import org.http4k.jsonrpc.ErrorHandler
 import org.http4k.jsonrpc.ErrorMessage
@@ -11,6 +12,7 @@ import java.util.concurrent.CountDownLatch
 import kotlin.system.exitProcess
 
 object NodeCommand : Sift() {
+    @ExperimentalCoroutinesApi
     override fun run() {
         val exitCode = try {
             handleCommonErrors {

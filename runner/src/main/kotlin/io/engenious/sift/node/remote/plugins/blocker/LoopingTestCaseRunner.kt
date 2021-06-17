@@ -1,4 +1,4 @@
-package io.engenious.sift.node.plugins.blocker
+package io.engenious.sift.node.remote.plugins.blocker
 
 import com.github.tarcv.tongs.api.devices.Device
 import com.github.tarcv.tongs.api.devices.Pool
@@ -10,7 +10,7 @@ import com.github.tarcv.tongs.api.run.TestCaseRunnerArguments
 import com.github.tarcv.tongs.api.run.TestCaseRunnerContext
 import com.github.tarcv.tongs.api.run.TestCaseRunnerFactory
 import com.github.tarcv.tongs.api.testcases.TestCase
-import io.engenious.sift.node.plugins.blocker.LoopingTestCaseProvider.Companion.loopingTestCase
+import io.engenious.sift.node.remote.plugins.blocker.LoopingTestCaseProvider.Companion.loopingTestCase
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 

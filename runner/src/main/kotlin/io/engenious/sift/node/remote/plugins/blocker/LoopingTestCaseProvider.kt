@@ -1,4 +1,4 @@
-package io.engenious.sift.node.plugins.blocker
+package io.engenious.sift.node.remote.plugins.blocker
 
 import com.github.tarcv.tongs.api.testcases.TestCase
 import com.github.tarcv.tongs.api.testcases.TestCaseProvider

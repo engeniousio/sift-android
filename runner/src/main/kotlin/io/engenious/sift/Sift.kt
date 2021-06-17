@@ -27,7 +27,8 @@ import com.github.tarcv.tongs.pooling.NoDevicesForPoolException
 import com.github.tarcv.tongs.pooling.NoPoolLoaderConfiguredException
 import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.list.NoOpPlugin
-import io.engenious.sift.node.NodeCommand
+import io.engenious.sift.node.central.plugin.RemoteNodeDevicePlugin
+import io.engenious.sift.node.remote.NodeCommand
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
 import org.slf4j.Logger
@@ -272,6 +273,8 @@ abstract class Sift : Runnable {
             val siftClient by lazy {
                 options.createClient()
             }
+
+            RemoteNodeDevicePlugin(finalizedConfig).connect()
 
             conveyor
                 .prepare(

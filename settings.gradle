@@ -1,4 +1,6 @@
-rootProject.name = 'sift'
+rootProject.name = 'sift-android'
 
 include ':runner'
+project(":runner").name = 'sift'
+
 include ':ondevice'

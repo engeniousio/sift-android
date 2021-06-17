@@ -1,4 +1,4 @@
-package io.engenious.sift.node.plugins
+package io.engenious.sift.node.remote.plugins
 
 import com.github.tarcv.tongs.api.run.RunRule
 import com.github.tarcv.tongs.api.run.RunRuleContext

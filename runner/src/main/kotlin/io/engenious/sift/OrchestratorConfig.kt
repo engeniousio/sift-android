@@ -11,7 +11,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonObject
-import kotlin.reflect.full.memberProperties
 
 @Serializable
 data class OrchestratorConfig(
@@ -27,7 +26,7 @@ data class OrchestratorConfig(
 //    val setUpScriptPath: String, // TODO: implement this option
 //    val tearDownScriptPath: String, // TODO: implement this option
 
-    val nodes: List<Node>
+    val nodes: List<Node.RemoteNode>
 ) {
     @Serializable(with = Node.Companion::class)
     sealed class Node {
@@ -39,13 +38,6 @@ data class OrchestratorConfig(
         abstract val environmentVariables: Map<String, String>
 
         abstract val UDID: UdidLists?
-
-        @Serializable
-        data class ThisNode(
-            override val androidSdkPath: String,
-            override val environmentVariables: Map<String, String> = emptyMap(),
-            override val UDID: UdidLists?
-        ) : Node()
 
         @Serializable
         data class RemoteNode(
@@ -73,15 +65,7 @@ data class OrchestratorConfig(
                 val jsonObject = input.decodeJsonElement() as? JsonObject
                     ?: throw SerializationException("Expected object for ${input.decodeJsonElement()::class}")
 
-                val isRemoteNode = jsonObject.keys.any { key ->
-                    ThisNode::class.memberProperties.none { prop -> prop.name == key }
-                }
-
-                return if (isRemoteNode) {
-                    decoder.json.decodeFromJsonElement(RemoteNode.serializer(), jsonObject)
-                } else {
-                    decoder.json.decodeFromJsonElement(ThisNode.serializer(), jsonObject)
-                }
+                return decoder.json.decodeFromJsonElement(RemoteNode.serializer(), jsonObject)
             }
 
             override fun serialize(encoder: Encoder, value: Node) {

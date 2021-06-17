@@ -1,4 +1,4 @@
-package io.engenious.sift.node.hooks
+package io.engenious.sift.node.remote.hooks
 
 import com.github.tarcv.tongs.TongsRunner
 import com.github.tarcv.tongs.api.result.TestCaseRunResult

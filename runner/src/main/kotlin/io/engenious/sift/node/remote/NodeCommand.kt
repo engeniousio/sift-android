@@ -1,12 +1,12 @@
-package io.engenious.sift.node
+package io.engenious.sift.node.remote
 
 import io.engenious.sift.Sift
+import io.engenious.sift.node.central.plugin.RemoteNodeDevicePlugin.Companion.siftRemotePort
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.http4k.format.KotlinxSerialization
 import org.http4k.jsonrpc.ErrorHandler
 import org.http4k.jsonrpc.ErrorMessage
 import org.http4k.jsonrpc.JsonRpc
-import org.http4k.server.KtorCIO
 import org.http4k.server.asServer
 import java.util.concurrent.CountDownLatch
 import kotlin.system.exitProcess
@@ -26,7 +26,7 @@ object NodeCommand : Sift() {
                     method("runTest", handler(node::runTest))
                     method("shutdown", handler(node::shutdown))
                 }
-                    .asServer(KtorCIO())
+                    .asServer(LoopbackV4KtorCIO(siftRemotePort))
                     .start()
                     .use {
                         shutdownSignaller.await()

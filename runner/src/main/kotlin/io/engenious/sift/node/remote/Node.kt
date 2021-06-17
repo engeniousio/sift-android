@@ -1,4 +1,4 @@
-package io.engenious.sift.node
+package io.engenious.sift.node.remote
 
 import com.android.annotations.concurrency.GuardedBy
 import com.github.tarcv.tongs.Configuration
@@ -16,15 +16,17 @@ import com.github.tarcv.tongs.model.TestCaseEventQueue
 import io.engenious.sift.MergedConfigWithInjectedVars
 import io.engenious.sift.OrchestratorConfig
 import io.engenious.sift.applyLocalNodeConfiguration
-import io.engenious.sift.node.hooks.CollectingPoolTestRunnerFactory
-import io.engenious.sift.node.plugins.DeviceCollectingPlugin
-import io.engenious.sift.node.plugins.ResultListeningPlugin
-import io.engenious.sift.node.plugins.RunListeningPlugin
-import io.engenious.sift.node.plugins.TestCaseCollectingPlugin
-import io.engenious.sift.node.plugins.blocker.LoopingDeviceProvider.Companion.loopingDevices
-import io.engenious.sift.node.plugins.blocker.LoopingDeviceProviderFactory
-import io.engenious.sift.node.plugins.blocker.LoopingTestCaseProviderFactory
-import io.engenious.sift.node.plugins.blocker.LoopingTestCaseRunnerFactory
+import io.engenious.sift.node.changePropertyField
+import io.engenious.sift.node.extractProperty
+import io.engenious.sift.node.remote.hooks.CollectingPoolTestRunnerFactory
+import io.engenious.sift.node.remote.plugins.DeviceCollectingPlugin
+import io.engenious.sift.node.remote.plugins.ResultListeningPlugin
+import io.engenious.sift.node.remote.plugins.RunListeningPlugin
+import io.engenious.sift.node.remote.plugins.TestCaseCollectingPlugin
+import io.engenious.sift.node.remote.plugins.blocker.LoopingDeviceProvider.Companion.loopingDevices
+import io.engenious.sift.node.remote.plugins.blocker.LoopingDeviceProviderFactory
+import io.engenious.sift.node.remote.plugins.blocker.LoopingTestCaseProviderFactory
+import io.engenious.sift.node.remote.plugins.blocker.LoopingTestCaseRunnerFactory
 import io.engenious.sift.node.serialization.RemoteDevice
 import io.engenious.sift.node.serialization.RemoteTestCase
 import io.engenious.sift.node.serialization.RemoteTestCaseRunResult

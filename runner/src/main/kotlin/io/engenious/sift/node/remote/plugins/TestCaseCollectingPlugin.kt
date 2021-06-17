@@ -1,4 +1,4 @@
-package io.engenious.sift.node.plugins
+package io.engenious.sift.node.remote.plugins
 
 import com.github.tarcv.tongs.api.run.TestCaseEvent
 import com.github.tarcv.tongs.api.testcases.TestCase
@@ -6,7 +6,7 @@ import com.github.tarcv.tongs.api.testcases.TestCaseRule
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleContext
 import com.github.tarcv.tongs.api.testcases.TestCaseRuleFactory
 import io.engenious.sift.CollectingTestCaseRule
-import io.engenious.sift.node.plugins.blocker.LoopingDevice
+import io.engenious.sift.node.remote.plugins.blocker.LoopingDevice
 import java.util.concurrent.atomic.AtomicBoolean
 
 class TestCaseCollectingPlugin(private val consumer: (Set<TestCase>) -> Unit) :

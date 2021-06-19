@@ -14,7 +14,6 @@ import com.github.tarcv.tongs.api.testcases.TestCase
 import com.github.tarcv.tongs.injector.TestCaseRunnerManager
 import com.github.tarcv.tongs.model.TestCaseEventQueue
 import io.engenious.sift.MergedConfigWithInjectedVars
-import io.engenious.sift.OrchestratorConfig
 import io.engenious.sift.applyLocalNodeConfiguration
 import io.engenious.sift.node.changePropertyField
 import io.engenious.sift.node.extractProperty
@@ -33,7 +32,6 @@ import io.engenious.sift.node.serialization.RemoteTestCaseRunResult
 import io.engenious.sift.node.serialization.deviceIdentifierAsString
 import io.engenious.sift.nodeDevicesStrategy
 import io.engenious.sift.setupCommonTongsConfiguration
-import io.engenious.sift.singleLocalNode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -58,7 +56,7 @@ class Node(
 ) {
     private val tempOutputPath: Path
     init {
-        val thisNode = config.mergedConfigWithInjectedVars.nodes.singleLocalNode() as OrchestratorConfig.Node.RemoteNode
+        val thisNode = config.mergedConfigWithInjectedVars.nodes.single()
         val tempRoot = Files.createDirectories(Paths.get(thisNode.deploymentPath, "tmp")) // TODO: delete on shutdown
         tempOutputPath = Files.createTempDirectory(tempRoot, "output")
     }
@@ -66,6 +64,7 @@ class Node(
     private val globalLock = Any()
     @GuardedBy("globalLock") private var operator: Thread? = null
     @GuardedBy("globalLock") private val runnerCache: MutableMap<Device, TestCaseRunner> = HashMap()
+    @GuardedBy("globalLock") private lateinit var myInfo: NodeInfo
     private val looperShutdownSignaller = CountDownLatch(1)
     private val delayedExceptions = Collections.synchronizedList(mutableListOf<Throwable>())
     private val pool = CompletableDeferred<Pool>()
@@ -89,16 +88,20 @@ class Node(
 
     @ExperimentalCoroutinesApi
     fun init(): NodeInfo = synchronized(globalLock) {
-        require(operator == null) { "The node is already initialized" }
+        if (operator != null) {
+            return myInfo
+        }
 
         val operator = thread(start = true) {
             try {
                 val configuration = Configuration.Builder().apply {
+                    val thisNodeConfig = config.mergedConfigWithInjectedVars.nodes.single()
+
                     setupCommonTongsConfiguration(config)
-                    applyLocalNodeConfiguration(config)
+                    applyLocalNodeConfiguration(thisNodeConfig)
                     withPoolingStrategy(
                         nodeDevicesStrategy(
-                            config.mergedConfigWithInjectedVars.nodes,
+                            thisNodeConfig,
                             additionalSerials = loopingDevices.map { it.serial }
                         )
                     )
@@ -147,7 +150,7 @@ class Node(
             }
         }
 
-        val info = runBlocking {
+        myInfo = runBlocking {
             // TODO: interrupt operator thread on cancel
             NodeInfo(
                 devices.await()
@@ -158,7 +161,7 @@ class Node(
         }
 
         this.operator = operator
-        info
+        myInfo
     }
 
     @Serializable

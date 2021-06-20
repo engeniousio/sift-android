@@ -16,7 +16,7 @@ data class RemoteDevice(
     private val modelName: String,
     private val modelNameUniqueSuffix: String,
     private val osApiLevel: Int,
-    private val tablet: Boolean,
+    private val isTablet: Boolean,
     private val longName: String,
     private val supportedVisualDiagnostics: Diagnostics,
     private val id: String,
@@ -39,7 +39,7 @@ data class RemoteDevice(
                 modelNameUniqueSuffix = device.name.removePrefix(device.modelName),
                 osApiLevel = device.osApiLevel,
                 longName = device.longName,
-                tablet = device.isTablet,
+                isTablet = device.isTablet,
                 geometry = device.geometry,
                 supportedVisualDiagnostics = device.supportedVisualDiagnostics,
                 id = device.deviceIdentifierAsString()

@@ -56,7 +56,7 @@ data class RemoteTestCaseRunResult(
             }
         )
 
-        fun RemoteTestCaseRunResult.fromSurrogate(pool: Pool): TestCaseRunResult {
+        fun RemoteTestCaseRunResult.toTestCaseRunResult(pool: Pool): TestCaseRunResult {
             val testFileManager = TestCaseFileManagerImpl(
                 KoinContextHandler.get().get(),
                 pool,

@@ -22,8 +22,10 @@ import io.engenious.sift.node.remote.plugins.DeviceCollectingPlugin
 import io.engenious.sift.node.remote.plugins.ResultListeningPlugin
 import io.engenious.sift.node.remote.plugins.RunListeningPlugin
 import io.engenious.sift.node.remote.plugins.TestCaseCollectingPlugin
+import io.engenious.sift.node.remote.plugins.blocker.LoopingDevice
 import io.engenious.sift.node.remote.plugins.blocker.LoopingDeviceProvider.Companion.loopingDevices
 import io.engenious.sift.node.remote.plugins.blocker.LoopingDeviceProviderFactory
+import io.engenious.sift.node.remote.plugins.blocker.LoopingTestCaseProvider.Companion.loopingTestCase
 import io.engenious.sift.node.remote.plugins.blocker.LoopingTestCaseProviderFactory
 import io.engenious.sift.node.remote.plugins.blocker.LoopingTestCaseRunnerFactory
 import io.engenious.sift.node.serialization.RemoteDevice
@@ -154,9 +156,11 @@ class Node(
             // TODO: interrupt operator thread on cancel
             NodeInfo(
                 devices.await()
-//                    .filter { it != LoopingDevice }
+                    .filter { it != LoopingDevice }
                     .map(RemoteDevice::fromLocalDevice),
-                testCases.await().map { RemoteTestCase.fromTestCase(it) }
+                testCases.await()
+                    .filter { it != loopingTestCase }
+                    .map { RemoteTestCase.fromTestCase(it) }
             )
         }
 
@@ -168,7 +172,12 @@ class Node(
     data class RunTest(
         val deviceId: String,
         val testCase: String
-    )
+    ) {
+        constructor(device: Device, testCase: TestCase) : this(
+            device.deviceIdentifierAsString(),
+            testCase.toString()
+        )
+    }
 
     @ExperimentalCoroutinesApi
     fun runTest(params: RunTest): TestRunResult {
@@ -213,7 +222,7 @@ class Node(
                     testCase.readablePath,
                     testCase.properties + mapOf(siftEventIndexKey to testTaskCounter.getAndIncrement().toString()),
                     testCase.annotations,
-                    listOf(device),
+                    setOf(device),
                     testCase.extra
                 ),
                 emptyList(),

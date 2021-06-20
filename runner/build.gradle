@@ -14,22 +14,22 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
     implementation("com.github.engeniousio.tongs:tongs-runner") {
         version {
-            strictly("5ca9a9648d5bc6469c88965888cf677eb90ecc29")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-common") {
         version {
-            strictly("5ca9a9648d5bc6469c88965888cf677eb90ecc29")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-plugin-api") {
         version {
-            strictly("5ca9a9648d5bc6469c88965888cf677eb90ecc29")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-plugin-android") {
         version {
-            strictly("5ca9a9648d5bc6469c88965888cf677eb90ecc29")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
     //noinspection GradleDependency // greater version from the above plugin is actually used

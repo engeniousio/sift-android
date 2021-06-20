@@ -29,6 +29,7 @@ import com.github.tarcv.tongs.pooling.NoPoolLoaderConfiguredException
 import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.list.NoOpPlugin
 import io.engenious.sift.node.central.plugin.RemoteNodeDevicePlugin
+import io.engenious.sift.node.central.plugin.RemoteNodeDeviceRunnerPlugin
 import io.engenious.sift.node.remote.NodeCommand
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
@@ -283,8 +284,13 @@ abstract class Sift : Runnable {
                 options.createClient()
             }
 
-            RemoteNodeDevicePlugin(finalizedConfig).connect()
-
+            val deviceRule = RemoteNodeDevicePlugin(
+                finalizedConfig.mergedConfigWithInjectedVars.let {
+                    it.copy(nodes = it.nodes.filterNot(::isLocalhostNode))
+                }
+            )
+            val remoteDeviceSerials = deviceRule.connect()
+                .map { it.serial }
             conveyor
                 .prepare(
                     {
@@ -299,7 +305,7 @@ abstract class Sift : Runnable {
                                 }
                             }
                         finalizedConfig.mergedConfigWithInjectedVars.let { config ->
-                            withPoolingStrategy(nodeDevicesStrategy(thisNodeConfiguration = thisNodeConfig))
+                            withPoolingStrategy(nodeDevicesStrategy(thisNodeConfig, remoteDeviceSerials))
                             ifValueSupplied(config.reportTitle) { withTitle(it) }
                             ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
                         }
@@ -332,6 +338,8 @@ abstract class Sift : Runnable {
                         siftClient.postResults(options.testPlan, result)
                     }
                 )
+                .addRule(deviceRule)
+                .addRule(RemoteNodeDeviceRunnerPlugin())
                 .apply {
                     val exitCode = handleCommonErrors {
                         val result = run(withWarnings = true)
@@ -369,8 +377,9 @@ abstract class Sift : Runnable {
 }
 
 fun nodeDevicesStrategy(
-    thisNodeConfiguration: OrchestratorConfig.Node?, additionalSerials: List<String> = emptyList()
-                        ): PoolingStrategy {
+    thisNodeConfiguration: OrchestratorConfig.Node?,
+    additionalSerials: List<String> = emptyList()
+): PoolingStrategy {
     return PoolingStrategy().apply {
         manual = ManualPooling().apply {
             groupings = mapOf(
@@ -442,6 +451,6 @@ internal fun Collection<OrchestratorConfig.Node.RemoteNode>.singleLocalNode(): O
     return localNode.singleOrNull()
 }
 
-private fun isLocalhostNode(node: OrchestratorConfig.Node.RemoteNode): Boolean {
+fun isLocalhostNode(node: OrchestratorConfig.Node.RemoteNode): Boolean {
     return node.host == "127.0.0.1" && node.port == 22
 }

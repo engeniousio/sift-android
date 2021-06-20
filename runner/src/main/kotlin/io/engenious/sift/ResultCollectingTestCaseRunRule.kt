@@ -10,6 +10,7 @@ import com.github.tarcv.tongs.api.run.TestCaseRunRule
 import com.github.tarcv.tongs.api.run.TestCaseRunRuleAfterArguments
 import com.github.tarcv.tongs.api.run.TestCaseRunRuleContext
 import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
+import com.github.tarcv.tongs.model.AndroidDevice
 import com.github.tarcv.tongs.system.adb.CollectingShellOutputReceiver
 import io.engenious.sift.run.ResultData
 import io.engenious.sift.run.RunData
@@ -21,7 +22,11 @@ class ResultCollectingPlugin :
     // instead the conveyor is advanced automatically once the current test run is complete
 
     override fun testCaseRunRules(context: TestCaseRunRuleContext): Array<out TestCaseRunRule> {
-        return arrayOf(ResultCollectingTestCaseRunRule(previousStorage.enabledTests, storage.results, context))
+        return if (context.device is AndroidDevice) {
+            arrayOf(ResultCollectingTestCaseRunRule(previousStorage.enabledTests, storage.results, context))
+        } else {
+            emptyArray()
+        }
     }
 
     override fun initStorage(): ResultData = ResultData(previousStorage.runId)

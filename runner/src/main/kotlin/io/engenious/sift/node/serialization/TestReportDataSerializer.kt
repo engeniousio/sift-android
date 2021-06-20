@@ -15,7 +15,6 @@ import com.github.tarcv.tongs.api.result.TableReportData
 import com.github.tarcv.tongs.api.result.TestCaseFile
 import com.github.tarcv.tongs.api.result.TestReportData
 import com.github.tarcv.tongs.api.result.VideoReportData
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
@@ -105,7 +104,7 @@ object TestReportDataSerializer {
             is RemoteTestReportData.WritableTestReportData.SurrogateTableReportData -> {
                 if (surrogate.file != null) {
                     FileTableReportData(surrogate.title, testCaseFileSerializer.fromSurrogate(surrogate.file)) {
-                        Json.decodeFromString(it.readText())
+                        Json.decodeFromString(TableJsonSerializer, it.readText())
                     }
                 } else {
                     SimpleTableReportData(

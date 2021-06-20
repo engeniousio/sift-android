@@ -1,14 +1,23 @@
 package io.engenious.sift.node.serialization
 
+import com.github.tarcv.tongs.api.devices.Device
 import com.github.tarcv.tongs.api.testcases.AnnotationInfo
 import com.github.tarcv.tongs.api.testcases.TestCase
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.floatOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.serializer
 
 @Serializable
@@ -51,7 +60,7 @@ data class RemoteTestCase(
             value.includedDevices?.map { RemoteDevice.fromLocalDevice(it) }
         )
 
-        fun RemoteTestCase.toTestCase() = TestCase(
+        fun RemoteTestCase.toTestCase(deviceMapper: (RemoteDevice) -> Device = RemoteDevice.Companion::fromLocalDevice) = TestCase(
             Class.forName(typeTag),
             testPackage,
             testClass,
@@ -62,11 +71,22 @@ data class RemoteTestCase(
                 AnnotationInfo(
                     it.first,
                     it.second.mapValues { (_, value) ->
-                        Json.decodeFromJsonElement(kotlinx.serialization.serializer(), value)
+                        @Suppress("USELESS_CAST")
+                        when (value) {
+                            is JsonPrimitive ->
+                                value.booleanOrNull
+                                    ?: value.intOrNull
+                                    ?: value.longOrNull
+                                    ?: value.floatOrNull
+                                    ?: value.doubleOrNull
+                                    ?: value.contentOrNull
+                            is JsonArray -> value as List<*>
+                            is JsonObject -> value as Map<String, *>
+                        }
                     }
                 )
             },
-            includedDevices?.map(RemoteDevice.Companion::fromLocalDevice)?.toSet(),
+            includedDevices?.map(deviceMapper)?.toSet(),
             Any()
         )
     }

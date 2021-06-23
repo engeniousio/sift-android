@@ -7,8 +7,10 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class LocalConfigurationClient(configPath: String) : Client {
-    private val jsonReader = Json {
-        ignoreUnknownKeys = true
+    companion object {
+        val jsonReader = Json {
+            ignoreUnknownKeys = true
+        }
     }
 
     private val configuration by lazy {

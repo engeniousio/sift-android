@@ -1,16 +1,7 @@
 package io.engenious.sift
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class OrchestratorConfig(
@@ -26,53 +17,24 @@ data class OrchestratorConfig(
 //    val setUpScriptPath: String, // TODO: implement this option
 //    val tearDownScriptPath: String, // TODO: implement this option
 
-    val nodes: List<Node.RemoteNode>
+    val nodes: List<RemoteNode>
 ) {
-    @Serializable(with = Node.Companion::class)
-    sealed class Node {
-        abstract val androidSdkPath: String
+    @Serializable
+    data class RemoteNode(
+        val name: String,
+        val host: String,
+        val port: Int,
+        val username: String,
+        @Deprecated("Will be replaced with pathToCertificate in 1.0") val password: String? = null,
+        val pathToCertificate: String? = null,
+        val deploymentPath: String,
 
-        /**
-         * Additional instrumentation arguments passed to a device
-         */
-        abstract val environmentVariables: Map<String, String>
+        val androidSdkPath: String,
 
-        abstract val UDID: UdidLists?
+        val environmentVariables: Map<String, String> = emptyMap(),
 
-        @Serializable
-        data class RemoteNode(
-            val name: String,
-            val host: String,
-            val port: Int,
-            val username: String,
-            @Deprecated("Will be replaced with pathToCertificate in 1.0") val password: String? = null,
-            val pathToCertificate: String? = null,
-            val deploymentPath: String,
-
-            override val androidSdkPath: String,
-
-            override val environmentVariables: Map<String, String> = emptyMap(),
-
-            override val UDID: UdidLists?
-        ) : Node()
-
-        companion object : KSerializer<Node> {
-            override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Node", PrimitiveKind.STRING)
-
-            override fun deserialize(decoder: Decoder): Node {
-                val input = decoder as? JsonDecoder
-                    ?: throw SerializationException("Expected JsonDecoder for ${decoder::class}")
-                val jsonObject = input.decodeJsonElement() as? JsonObject
-                    ?: throw SerializationException("Expected object for ${input.decodeJsonElement()::class}")
-
-                return decoder.json.decodeFromJsonElement(RemoteNode.serializer(), jsonObject)
-            }
-
-            override fun serialize(encoder: Encoder, value: Node) {
-                TODO("Not yet implemented")
-            }
-        }
-    }
+        val UDID: UdidLists?
+    )
 
     @Serializable
     data class UdidLists(

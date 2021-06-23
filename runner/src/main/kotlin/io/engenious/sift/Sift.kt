@@ -377,7 +377,7 @@ abstract class Sift : Runnable {
 }
 
 fun nodeDevicesStrategy(
-    thisNodeConfiguration: OrchestratorConfig.Node?,
+    thisNodeConfiguration: OrchestratorConfig.RemoteNode?,
     additionalSerials: List<String> = emptyList()
 ): PoolingStrategy {
     return PoolingStrategy().apply {
@@ -406,7 +406,7 @@ private val allLocalDevicesStrategy: PoolingStrategy by lazy {
 }
 
 internal fun Configuration.Builder.applyLocalNodeConfiguration(
-    thisNodeConfiguration: OrchestratorConfig.Node
+    thisNodeConfiguration: OrchestratorConfig.RemoteNode
 ): Configuration.Builder {
     withAndroidSdk(File(thisNodeConfiguration.androidSdkPath))
     withTestRunnerArguments(thisNodeConfiguration.environmentVariables)
@@ -439,7 +439,7 @@ internal fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedC
 const val tempEmptyDirectoryName = "sift"
 const val siftPoolName = "devices"
 
-internal fun Collection<OrchestratorConfig.Node.RemoteNode>.singleLocalNode(): OrchestratorConfig.Node.RemoteNode? {
+internal fun Collection<OrchestratorConfig.RemoteNode>.singleLocalNode(): OrchestratorConfig.RemoteNode? {
     require(this.isNotEmpty()) {
         "At least one node should be defined"
     }
@@ -451,6 +451,6 @@ internal fun Collection<OrchestratorConfig.Node.RemoteNode>.singleLocalNode(): O
     return localNode.singleOrNull()
 }
 
-fun isLocalhostNode(node: OrchestratorConfig.Node.RemoteNode): Boolean {
+fun isLocalhostNode(node: OrchestratorConfig.RemoteNode): Boolean {
     return node.host == "127.0.0.1" && node.port == 22
 }

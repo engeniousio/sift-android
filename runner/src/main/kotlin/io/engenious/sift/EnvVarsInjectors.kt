@@ -10,7 +10,7 @@ fun OrchestratorConfig.injectEnvVars(): MergedConfigWithInjectedVars {
 
 private fun injectEnvVarsIfPossible(value: Any?): Any? = when (value) {
     is String -> value.injectEnvVars().string
-    is OrchestratorConfig.Node.RemoteNode -> injectEnvVarsIntoDataClass(value)
+    is OrchestratorConfig.RemoteNode -> injectEnvVarsIntoDataClass(value)
     is OrchestratorConfig.UdidLists -> injectEnvVarsIntoDataClass(value)
     is Map<*, *> -> value.mapValues { (_, value) -> injectEnvVarsIfPossible(value) }
     is List<*> -> value.map { injectEnvVarsIfPossible(it) }

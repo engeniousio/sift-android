@@ -11,12 +11,14 @@ import com.github.tarcv.tongs.api.testcases.TestCase
 import com.github.tarcv.tongs.api.testcases.TestCaseProvider
 import com.github.tarcv.tongs.api.testcases.TestCaseProviderContext
 import com.github.tarcv.tongs.api.testcases.TestCaseProviderFactory
+import io.engenious.sift.LocalConfigurationClient
 import io.engenious.sift.OrchestratorConfig
 import io.engenious.sift.node.serialization.RemoteDevice
 import io.engenious.sift.node.serialization.RemoteTestCase.Companion.toTestCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.json.Json
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -37,6 +39,7 @@ class RemoteNodeDevicePlugin(
     companion object {
         const val siftLocalBasePort = 9760
         const val siftRemotePort = 9759
+        val logger: Logger = LoggerFactory.getLogger(RemoteNodeDevicePlugin::class.java)
     }
 
     override fun runRules(context: RunRuleContext): Array<out RunRule> {
@@ -148,15 +151,14 @@ class RemoteNodeDevicePlugin(
                 try {
                     it.close()
                 } catch (t: Throwable) {
-                    // TODO
-                    t.printStackTrace()
+                    logger.warn("Error while closing SSH session", t)
                 }
             }
         }
     }
 
     private fun SshSession.setupPortForwarding(
-        it: OrchestratorConfig.Node.RemoteNode,
+        it: OrchestratorConfig.RemoteNode,
         nodeIndex: Int
     ): Int {
         val localPort = siftLocalBasePort + nodeIndex
@@ -169,11 +171,11 @@ class RemoteNodeDevicePlugin(
     }
 
     private fun SshSession.uploadConfig(
-        it: OrchestratorConfig.Node.RemoteNode,
+        it: OrchestratorConfig.RemoteNode,
         nodeConfiguration: OrchestratorConfig
     ): String {
         val relativeConfigPath = "config.json"
-        val encodedConfig = Json.encodeToString( // TODO: use the same serializer that used for reading local configs
+        val encodedConfig = LocalConfigurationClient.jsonReader.encodeToString(
             OrchestratorConfig.serializer(),
             nodeConfiguration
         )
@@ -181,7 +183,7 @@ class RemoteNodeDevicePlugin(
         return relativeConfigPath
     }
 
-    private fun resolveConfigForNode(it: OrchestratorConfig.Node.RemoteNode) = globalConfiguration.copy(
+    private fun resolveConfigForNode(it: OrchestratorConfig.RemoteNode) = globalConfiguration.copy(
         // TODO: env replacement
         nodes = listOf(it),
         appPackage = relativeAutPath,
@@ -189,7 +191,7 @@ class RemoteNodeDevicePlugin(
     )
 
     private fun SshSession.uploadBinaries(
-        nodeConfig: OrchestratorConfig.Node.RemoteNode,
+        nodeConfig: OrchestratorConfig.RemoteNode,
         selfJar: Path,
         appPackage: Path,
         testPackage: Path

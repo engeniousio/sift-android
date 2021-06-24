@@ -14,6 +14,7 @@ import org.apache.sshd.common.channel.Channel
 import org.apache.sshd.common.util.io.resource.PathResource
 import org.apache.sshd.common.util.net.SshdSocketAddress
 import org.apache.sshd.common.util.security.SecurityUtils
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.Closeable
 import java.io.File
@@ -27,7 +28,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-class SshSession private constructor(private val client: SshClient, private val session: ClientSession) {
+class SshSession private constructor(private val name: String, private val session: ClientSession) {
     private var open = true
     private val channels = mutableListOf<Channel>()
 
@@ -37,7 +38,7 @@ class SshSession private constructor(private val client: SshClient, private val 
         private const val shortOperationTimeout = 15_000L
         private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
-        fun create(host: String, port: Int, username: String, privateKeyPath: String): SshSession {
+        fun create(name: String, host: String, port: Int, username: String, privateKeyPath: String): SshSession {
             return runBlocking(dispatcher) {
                 val client = SshClient.setUpDefaultClient()
                 client.start()
@@ -59,7 +60,7 @@ class SshSession private constructor(private val client: SshClient, private val 
                     throw t
                 }
 
-                SshSession(client, session)
+                SshSession(name, session)
             }
         }
 
@@ -100,19 +101,17 @@ class SshSession private constructor(private val client: SshClient, private val 
                 }
             }
 
-            thread(start = true, isDaemon = true) {
-                input
-                    .buffered()
-                    .apply {
-                        mark(1)
-                        use {
-                            do {
-                                reset()
-                                println(String(readBytes()))
-                                mark(1)
-                            } while (read() != -1)
+            val logger = LoggerFactory.getLogger(SshSession::class.java)
+            if (logger.isInfoEnabled) {
+                thread(start = true, isDaemon = true) {
+                    input
+                        .bufferedReader()
+                        .apply {
+                            lineSequence().forEach {
+                                logger.info("[$name] $it")
+                            }
                         }
-                    }
+                }
             }
         } catch (t: Throwable) {
             withSshDispatcher(shortOperationTimeout) {

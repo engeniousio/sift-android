@@ -77,6 +77,7 @@ class RemoteNodeDevicePlugin(
                 require(File(it.pathToCertificate).isFile) { "Private key for node ${it.name} is not a file" }
 
                 val session = SshSession.create(
+                    it.name,
                     it.host, it.port,
                     it.username, it.pathToCertificate
                 )

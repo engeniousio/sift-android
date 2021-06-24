@@ -2,6 +2,7 @@ package io.engenious.sift.node.central.plugin
 
 import com.github.tarcv.tongs.api.devices.Device
 import com.github.tarcv.tongs.api.result.RunTesult
+import com.github.tarcv.tongs.api.result.TestCaseRunResult
 import com.github.tarcv.tongs.api.run.TestCaseRunner
 import com.github.tarcv.tongs.api.run.TestCaseRunnerArguments
 import com.github.tarcv.tongs.api.run.TestCaseRunnerContext
@@ -15,6 +16,14 @@ class RemoteNodeDeviceRunnerPlugin : TestCaseRunnerFactory<TestCaseRunner> {
             override fun run(arguments: TestCaseRunnerArguments): RunTesult {
                 val device = context.device as RemoteNodeDevice
                 return device.runTest(context.pool, arguments.testCaseEvent.testCase)
+                    .let { it as TestCaseRunResult }
+                    .copy(
+                        pool = context.pool,
+                        device = context.device,
+                        testCase = arguments.testCaseEvent.testCase,
+                        baseTotalFailureCount = arguments.testCaseEvent.totalFailureCount,
+                        startTimestampUtc = arguments.startTimestampUtc
+                    )
             }
 
             override fun supports(device: Device, testCase: TestCase): Boolean {

@@ -23,7 +23,6 @@ class RemoteNodeDevice(
     fun runTest(pool: Pool, testCase: TestCase): RunTesult {
         return node.client.runTest(device, testCase).result
             .toTestCaseRunResult(pool)
-            .copy(device = this)
     }
 
     override fun getHost(): String = node.name

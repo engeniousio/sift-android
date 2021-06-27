@@ -24,6 +24,7 @@ data class OrchestratorConfig(
     val reportTitle: String = "Test report",
     val reportSubtitle: String = " ",
     val testsExecutionTimeout: Int,
+    val environmentVariables: Map<String, String> = emptyMap(),
 //    val setUpScriptPath: String, // TODO: implement this option
 //    val tearDownScriptPath: String, // TODO: implement this option
 

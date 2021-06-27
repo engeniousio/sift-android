@@ -11,7 +11,6 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.help
 import com.github.ajalt.clikt.parameters.groups.OptionGroup
 import com.github.ajalt.clikt.parameters.groups.cooccurring
-import com.github.ajalt.clikt.parameters.groups.provideDelegate
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.help
@@ -373,7 +372,10 @@ private fun Configuration.Builder.applyLocalNodeConfiguration(config: MergedConf
         ifValueSupplied(config.mergedConfigWithInjectedVars.nodes) {
             val localNode = it.singleLocalNode()
             withAndroidSdk(File(localNode.androidSdkPath))
-            withTestRunnerArguments(localNode.environmentVariables)
+
+            // Node variables have higher priority
+            val finalVariables = localNode.environmentVariables + config.mergedConfigWithInjectedVars.environmentVariables
+            withTestRunnerArguments(finalVariables)
         }
     }
     return this

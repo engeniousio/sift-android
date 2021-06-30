@@ -100,7 +100,7 @@ class Node(
                     val thisNodeConfig = config.mergedConfigWithInjectedVars.nodes.single()
 
                     setupCommonTongsConfiguration(config)
-                    applyLocalNodeConfiguration(thisNodeConfig)
+                    applyLocalNodeConfiguration(config, thisNodeConfig)
                     withPoolingStrategy(
                         nodeDevicesStrategy(
                             thisNodeConfig,

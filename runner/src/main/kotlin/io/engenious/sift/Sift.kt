@@ -178,7 +178,7 @@ abstract class Sift : Runnable {
                 .setupCommonTongsConfiguration(config)
                 .apply {
                     if (thisNodeConfig != null) {
-                        applyLocalNodeConfiguration(thisNodeConfig)
+                        applyLocalNodeConfiguration(config, thisNodeConfig)
                     } else {
                         applyStubLocalNodeConfiguration()
                     }
@@ -299,7 +299,7 @@ abstract class Sift : Runnable {
                         setupCommonTongsConfiguration(finalizedConfig)
                             .apply {
                                 if (thisNodeConfig != null) {
-                                    applyLocalNodeConfiguration(thisNodeConfig)
+                                    applyLocalNodeConfiguration(finalizedConfig, thisNodeConfig)
                                 } else {
                                     applyStubLocalNodeConfiguration()
                                 }
@@ -406,9 +406,13 @@ private val allLocalDevicesStrategy: PoolingStrategy by lazy {
 }
 
 internal fun Configuration.Builder.applyLocalNodeConfiguration(
+    config: MergedConfigWithInjectedVars,
     thisNodeConfiguration: OrchestratorConfig.RemoteNode
 ): Configuration.Builder {
     withAndroidSdk(File(thisNodeConfiguration.androidSdkPath))
+
+    // Node variables have higher priority
+    val finalVariables = thisNodeConfiguration.environmentVariables + config.mergedConfigWithInjectedVars.environmentVariables
     withTestRunnerArguments(thisNodeConfiguration.environmentVariables)
     return this
 }

@@ -14,7 +14,7 @@ class LocalConfigurationClient(configPath: String) : Client {
     }
 
     private val configuration by lazy {
-        jsonReader.decodeFromString<OrchestratorConfig>(File(configPath).readText())
+        jsonReader.decodeFromString<Config>(File(configPath).readText())
     }
     private val testList by lazy {
         jsonReader.decodeFromString<TestList>(File(configPath).readText())
@@ -24,7 +24,7 @@ class LocalConfigurationClient(configPath: String) : Client {
         // no op in local mode
     }
 
-    override fun getEnabledTests(testPlan: String, status: OrchestratorConfig.TestStatus): Map<TestIdentifier, Int> {
+    override fun getEnabledTests(testPlan: String, status: Config.TestStatus): Map<TestIdentifier, Int> {
         return testList.tests
             .associate {
                 TestIdentifier.fromString(it) to -1
@@ -40,7 +40,7 @@ class LocalConfigurationClient(configPath: String) : Client {
         // no op in local mode
     }
 
-    override fun getConfiguration(testPlan: String): OrchestratorConfig {
+    override fun getConfiguration(testPlan: String): Config {
         return configuration
     }
 }

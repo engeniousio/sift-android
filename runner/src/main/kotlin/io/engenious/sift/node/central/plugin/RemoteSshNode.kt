@@ -1,9 +1,9 @@
 package io.engenious.sift.node.central.plugin
 
-import io.engenious.sift.OrchestratorConfig
+import io.engenious.sift.Config
 
 class RemoteSshNode(
-    config: OrchestratorConfig.RemoteNode,
+    config: Config.NodeConfig.WithInjectedCentralNodeVars,
     val client: RemoteNodeClient
 ) {
     val name: String = config.name

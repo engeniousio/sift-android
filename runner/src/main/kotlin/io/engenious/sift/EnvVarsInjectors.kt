@@ -1,57 +1,47 @@
 package io.engenious.sift
 
-fun OrchestratorConfig.injectEnvVars(): MergedConfigWithInjectedVars {
-    return MergedConfigWithInjectedVars(
-        this
-            .mapPropertyValues { (_, value) -> injectEnvVarsIfPossible(value) }
-            .let { FileConfigWithInjectedVars(it) }.orchestratorConfigWithInjectedVars
-    )
-}
+import kotlin.reflect.full.hasAnnotation
 
-private fun injectEnvVarsIfPossible(value: Any?): Any? = when (value) {
-    is String -> value.injectEnvVars().string
-    is OrchestratorConfig.RemoteNode -> injectEnvVarsIntoDataClass(value)
-    is OrchestratorConfig.UdidLists -> injectEnvVarsIntoDataClass(value)
-    is Map<*, *> -> value.mapValues { (_, value) -> injectEnvVarsIfPossible(value) }
-    is List<*> -> value.map { injectEnvVarsIfPossible(it) }
+private fun injectEnvVars(value: Any?, isLocalNode: Boolean): Any? = when (value) {
+    is String -> injectEnvVars(value)
+    is Config.NodeConfig -> injectEnvVarsIntoDataClass(value, isLocalNode)
+    is Config.UdidLists -> injectEnvVarsIntoDataClass(value, isLocalNode)
+    is Map<*, *> -> value.mapValues { (_, value) -> injectEnvVars(value, isLocalNode) }
+    is List<*> -> value.map { injectEnvVars(it, isLocalNode) }
     else -> value
 }
 
-private fun <T : Any> injectEnvVarsIntoDataClass(value: T): T {
-    return dataClassToMap(value)
-        .mapValues { (_, value) -> injectEnvVarsIfPossible(value) }
-        .mapToDataClass(value)
+fun <T : Any> injectEnvVarsIntoDataClass(originalClass: T, isLocalNode: Boolean): T {
+    return dataClassToMap(originalClass)
+        .mapValues { (property, value) ->
+            // TODO: unit test this:
+            // Central node values are only expanded on a central node,
+            // local node ones are only expaned on remote nodes (or on central when it is also a local node)
+            if (isLocalNode == property.hasAnnotation<LocalNodeEnvironment>()) {
+                injectEnvVars(value, isLocalNode)
+            } else {
+                value
+            }
+        }
+        .mapToDataClass(originalClass)
 }
 
-fun String.injectEnvVars(): StringWithInjectedVars {
+fun injectEnvVars(s: String, resolver: (String) -> String? = { varName -> System.getenv(varName) }): String {
     return varRegex
-        .replace(this) {
+        .replace(s) {
             val (entireMatch, escapedChar, varName) = it.groupValues
             when {
                 escapedChar.isNotEmpty() -> {
                     escapedChar
                 }
                 varName.isNotEmpty() -> {
-                    System.getenv(varName) ?: entireMatch
+                    resolver(varName) ?: entireMatch
                 }
                 else -> {
                     entireMatch
                 }
             }
         }
-        .let { StringWithInjectedVars(it) }
 }
-
-inline class StringWithInjectedVars(
-    val string: String
-)
-
-inline class MergedConfigWithInjectedVars(
-    val mergedConfigWithInjectedVars: OrchestratorConfig
-)
-
-inline class FileConfigWithInjectedVars(
-    val orchestratorConfigWithInjectedVars: OrchestratorConfig
-)
 
 private val varRegex = Regex("""\\(.)|\$([A-Z][A-Z\d_]+)""")

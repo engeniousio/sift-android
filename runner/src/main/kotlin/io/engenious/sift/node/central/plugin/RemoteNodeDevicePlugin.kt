@@ -11,8 +11,8 @@ import com.github.tarcv.tongs.api.testcases.TestCase
 import com.github.tarcv.tongs.api.testcases.TestCaseProvider
 import com.github.tarcv.tongs.api.testcases.TestCaseProviderContext
 import com.github.tarcv.tongs.api.testcases.TestCaseProviderFactory
+import io.engenious.sift.Config
 import io.engenious.sift.LocalConfigurationClient
-import io.engenious.sift.OrchestratorConfig
 import io.engenious.sift.node.serialization.RemoteDevice
 import io.engenious.sift.node.serialization.RemoteTestCase.Companion.toTestCase
 import kotlinx.coroutines.CompletableDeferred
@@ -27,7 +27,7 @@ import java.nio.file.Paths
 import java.util.Collections
 
 class RemoteNodeDevicePlugin(
-    private val globalConfiguration: OrchestratorConfig
+    private val globalConfiguration: Config.WithInjectedCentralNodeVars
 ) : DeviceProviderFactory<DeviceProvider>, RunRuleFactory<RunRule>, TestCaseProviderFactory<TestCaseProvider> {
     private val relativeAutPath = "app." + globalConfiguration.appPackage.substringAfterLast('.')
     private val relativeTestPath = "test." + globalConfiguration.testPackage.substringAfterLast('.')
@@ -73,27 +73,31 @@ class RemoteNodeDevicePlugin(
 
         globalConfiguration.nodes
             .forEachIndexed { index, it ->
-                requireNotNull(it.pathToCertificate) { "Node ${it.name} has no private key set" }
-                require(File(it.pathToCertificate).isFile) { "Private key for node ${it.name} is not a file" }
+                val certificatePath = it.pathToCertificate
+                requireNotNull(certificatePath) { "Node ${it.name} has no private key set" }
+                require(File(certificatePath).isFile) { "Private key for node ${it.name} is not a file" }
 
                 val session = SshSession.create(
                     it.name,
                     it.host, it.port,
-                    it.username, it.pathToCertificate
+                    it.username, certificatePath
                 )
 
                 try {
                     val selfJar = getSelfJarPath()
+                    val deploymentPath = it.resolveDeploymentPath { key ->
+                        session.executeSingleCommandForStdout("echo $key").trim()
+                    }
                     val relativeBinPath = session.uploadBinaries(
-                        it,
+                        deploymentPath,
                         selfJar, Paths.get(globalConfiguration.appPackage), Paths.get(globalConfiguration.testPackage)
                     )
-                    val relativeConfigPath = session.uploadConfig(it, resolveConfigForNode(it))
+                    val relativeConfigPath = session.uploadConfig(deploymentPath, resolveConfigForNode(it))
                     val localPort = session.setupPortForwarding(it, index)
 
                     try {
                         session.executeSingleBackgroundCommand(
-                            "cd ${it.deploymentPath} && " +
+                            "cd $deploymentPath && " +
                                 "chmod +x ./$relativeBinPath && " +
                                 "./$relativeBinPath config _node -c ./$relativeConfigPath"
                         )
@@ -159,7 +163,7 @@ class RemoteNodeDevicePlugin(
     }
 
     private fun SshSession.setupPortForwarding(
-        it: OrchestratorConfig.RemoteNode,
+        it: Config.NodeConfig.WithInjectedCentralNodeVars,
         nodeIndex: Int
     ): Int {
         val localPort = siftLocalBasePort + nodeIndex
@@ -172,27 +176,27 @@ class RemoteNodeDevicePlugin(
     }
 
     private fun SshSession.uploadConfig(
-        it: OrchestratorConfig.RemoteNode,
-        nodeConfiguration: OrchestratorConfig
+        deploymentPath: String,
+        nodeConfiguration: Config.WithInjectedCentralNodeVars
     ): String {
         val relativeConfigPath = "config.json"
         val encodedConfig = LocalConfigurationClient.jsonReader.encodeToString(
-            OrchestratorConfig.serializer(),
+            Config.WithInjectedCentralNodeVars.Serializer,
             nodeConfiguration
         )
-        uploadContent(encodedConfig.encodeToByteArray(), "${it.deploymentPath}/$relativeConfigPath")
+        uploadContent(encodedConfig.encodeToByteArray(), "${deploymentPath}/$relativeConfigPath")
         return relativeConfigPath
     }
 
-    private fun resolveConfigForNode(it: OrchestratorConfig.RemoteNode) = globalConfiguration.copy(
-        // TODO: env replacement
-        nodes = listOf(it),
-        appPackage = relativeAutPath,
-        testPackage = relativeTestPath
-    )
+    private fun resolveConfigForNode(it: Config.NodeConfig.WithInjectedCentralNodeVars): Config.WithInjectedCentralNodeVars {
+        return globalConfiguration
+            .withNodes(listOf(it))
+            .withAppPackage(relativeAutPath)
+            .withTestPackage(relativeTestPath)
+    }
 
     private fun SshSession.uploadBinaries(
-        nodeConfig: OrchestratorConfig.RemoteNode,
+        deploymentPath: String,
         selfJar: Path,
         appPackage: Path,
         testPackage: Path
@@ -203,10 +207,10 @@ class RemoteNodeDevicePlugin(
         val relativeBinPath = "bin/${selfBin.fileName}"
         val relativeJarPath = "lib/${selfJar.fileName}"
         uploadFiles(
-            selfBin to "${nodeConfig.deploymentPath}/$relativeBinPath",
-            selfJar to "${nodeConfig.deploymentPath}/$relativeJarPath",
-            appPackage to "${nodeConfig.deploymentPath}/$relativeAutPath",
-            testPackage to "${nodeConfig.deploymentPath}/$relativeTestPath",
+            selfBin to "$deploymentPath/$relativeBinPath",
+            selfJar to "$deploymentPath/$relativeJarPath",
+            appPackage to "$deploymentPath/$relativeAutPath",
+            testPackage to "$deploymentPath/$relativeTestPath",
         )
         return relativeBinPath
     }

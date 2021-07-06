@@ -13,7 +13,7 @@ import com.github.tarcv.tongs.api.run.TestCaseRunnerContext
 import com.github.tarcv.tongs.api.testcases.TestCase
 import com.github.tarcv.tongs.injector.TestCaseRunnerManager
 import com.github.tarcv.tongs.model.TestCaseEventQueue
-import io.engenious.sift.MergedConfigWithInjectedVars
+import io.engenious.sift.Config
 import io.engenious.sift.applyLocalNodeConfiguration
 import io.engenious.sift.node.changePropertyField
 import io.engenious.sift.node.extractProperty
@@ -53,12 +53,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 class Node(
-    private val config: MergedConfigWithInjectedVars,
+    private val config: Config.WithInjectedCentralAndNodeVars,
     private val nodeShutdownSignaller: CountDownLatch
 ) {
     private val tempOutputPath: Path
     init {
-        val thisNode = config.mergedConfigWithInjectedVars.nodes.single()
+        val thisNode = config.nodes.single()
         val tempRoot = Files.createDirectories(Paths.get(thisNode.deploymentPath, "tmp")) // TODO: delete on shutdown
         tempOutputPath = Files.createTempDirectory(tempRoot, "output")
     }
@@ -97,7 +97,8 @@ class Node(
         val operator = thread(start = true) {
             try {
                 val configuration = Configuration.Builder().apply {
-                    val thisNodeConfig = config.mergedConfigWithInjectedVars.nodes.single()
+                    val thisNodeConfig = config.nodes.singleOrNull()
+                        ?: throw RuntimeException("Expected to receive exactly one node configuration from the central node")
 
                     setupCommonTongsConfiguration(config)
                     applyLocalNodeConfiguration(config, thisNodeConfig)

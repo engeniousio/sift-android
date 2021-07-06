@@ -1,11 +1,13 @@
 package io.engenious.sift.node.central.plugin
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.apache.sshd.client.SshClient
+import org.apache.sshd.client.channel.ChannelExec
 import org.apache.sshd.client.channel.ChannelShell
 import org.apache.sshd.client.session.ClientSession
 import org.apache.sshd.client.subsystem.sftp.SftpClient
@@ -121,6 +123,38 @@ class SshSession private constructor(private val name: String, private val sessi
             }
         }
         ch?.let { channels.add(it) }
+    }
+
+    fun executeSingleCommandForStdout(command: String) = runBlocking<String>(dispatcher) {
+        requireOpen()
+        val input = PipedInputStream()
+        val responseStream = PipedOutputStream(input)
+        var ch: ChannelExec? = null
+        try {
+            // Use a shell channel instead of an exec as they kill started processess on disconnect
+            val channel = withSshDispatcher(defaultTimeout) {
+                ch = session.createExecChannel(command)
+                ch!!
+            }
+            withSshDispatcher(defaultTimeout) {
+                channel.out = responseStream
+                channel.err = responseStream
+                channel.open().verify(defaultTimeoutSeconds, TimeUnit.SECONDS)
+            }
+
+            withTimeout(defaultTimeout) {
+                withContext(Dispatchers.IO) {
+                    input.bufferedReader().use {
+                        it.readText()
+                    }
+                }
+            }
+        } finally {
+            withSshDispatcher(shortOperationTimeout) {
+                ch?.close()
+                responseStream.close()
+            }
+        }
     }
 
     private fun requireOpen() {

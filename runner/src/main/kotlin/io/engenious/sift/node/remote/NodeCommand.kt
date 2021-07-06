@@ -16,7 +16,7 @@ object NodeCommand : Sift() {
     override fun run() {
         val exitCode = try {
             handleCommonErrors {
-                val config = requestConfig()
+                val config = requestConfig().injectLocalNodeVars()
                 val shutdownSignaller = CountDownLatch(1)
                 val node = Node(config, shutdownSignaller)
 

@@ -68,7 +68,7 @@ class RemoteNodeDevicePlugin(
         })
     }
 
-    fun connect(): MutableList<RemoteNodeDevice> {
+    fun connect(): List<RemoteNodeDevice> {
         val allDevices = mutableListOf<RemoteNodeDevice>()
 
         globalConfiguration.nodes
@@ -184,7 +184,7 @@ class RemoteNodeDevicePlugin(
             Config.WithInjectedCentralNodeVars.Serializer,
             nodeConfiguration
         )
-        uploadContent(encodedConfig.encodeToByteArray(), "${deploymentPath}/$relativeConfigPath")
+        uploadContent(encodedConfig.encodeToByteArray(), "$deploymentPath/$relativeConfigPath")
         return relativeConfigPath
     }
 

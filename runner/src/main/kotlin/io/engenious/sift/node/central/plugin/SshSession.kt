@@ -1,8 +1,6 @@
 package io.engenious.sift.node.central.plugin
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -26,11 +24,17 @@ import java.io.PipedOutputStream
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.KeyPair
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-class SshSession private constructor(private val name: String, private val session: ClientSession) {
+class SshSession private constructor( // TODO: refactor this whole class, especially timeout and singleThreadExecutor
+    private val name: String,
+    private val session: ClientSession,
+    private val dispatcher: ExecutorService
+) {
     private var open = true
     private val channels = mutableListOf<Channel>()
 
@@ -38,31 +42,46 @@ class SshSession private constructor(private val name: String, private val sessi
         private const val defaultTimeoutSeconds = 30L
         private const val defaultTimeout = 30L * 1000
         private const val shortOperationTimeout = 15_000L
-        private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
         fun create(name: String, host: String, port: Int, username: String, privateKeyPath: String): SshSession {
-            return runBlocking(dispatcher) {
-                val client = SshClient.setUpDefaultClient()
-                client.start()
+            val dispatcher = Executors.newSingleThreadExecutor()
 
-                val session = try {
-                    val session = client
-                        .connect(username, host, port)
-                        .verify(defaultTimeoutSeconds, TimeUnit.SECONDS).session
-                    try {
-                        session.addPublicKeyIdentity(readKey(privateKeyPath))
-                        session.auth().verify(defaultTimeoutSeconds, TimeUnit.SECONDS)
-                        session
-                    } catch (t: Throwable) {
-                        session.close()
-                        throw t
+            val client = SshClient.setUpDefaultClient() // TODO: use same client instance for all sessions
+            client.start()
+
+            return dispatcher
+                .submit(
+                    Callable {
+                        val session = try {
+                            val session = client
+                                .connect(username, host, port)
+                                .verify(defaultTimeoutSeconds, TimeUnit.SECONDS).session
+                            try {
+                                session.addPublicKeyIdentity(readKey(privateKeyPath))
+                                session.auth().verify(defaultTimeoutSeconds, TimeUnit.SECONDS)
+                                session
+                            } catch (t: Throwable) {
+                                session.close()
+                                throw t
+                            }
+                        } catch (t: Throwable) {
+                            try {
+                                client.stop()
+                            } finally {
+                                dispatcher.close()
+                            }
+                            throw t
+                        }
+
+                        SshSession(name, session, dispatcher)
                     }
-                } catch (t: Throwable) {
-                    client.stop()
-                    throw t
-                }
+                )
+                .get(defaultTimeoutSeconds, TimeUnit.SECONDS)
+        }
 
-                SshSession(name, session)
+        private fun ExecutorService.close() {
+            Closeable { this@close.shutdownNow() }.use {
+                this@close.shutdown()
             }
         }
 
@@ -80,7 +99,7 @@ class SshSession private constructor(private val name: String, private val sessi
         }
     }
 
-    fun executeSingleBackgroundCommand(command: String) = runBlocking<Unit>(dispatcher) {
+    fun executeSingleBackgroundCommand(command: String) {
         requireOpen()
         val input = PipedInputStream()
         val responseStream = PipedOutputStream(input)
@@ -117,21 +136,26 @@ class SshSession private constructor(private val name: String, private val sessi
             }
         } catch (t: Throwable) {
             withSshDispatcher(shortOperationTimeout) {
-                ch?.close()
-                responseStream.close()
-                throw t
+                try {
+                    ch?.close()
+                    responseStream.close()
+                } catch (closeEx: Throwable) {
+                    t.addSuppressed(closeEx)
+                } finally {
+                    throw t
+                }
             }
         }
         ch?.let { channels.add(it) }
     }
 
-    fun executeSingleCommandForStdout(command: String) = runBlocking<String>(dispatcher) {
+    fun executeSingleCommandForStdout(command: String): String {
         requireOpen()
         val input = PipedInputStream()
         val responseStream = PipedOutputStream(input)
         var ch: ChannelExec? = null
-        try {
-            // Use a shell channel instead of an exec as they kill started processess on disconnect
+        return try {
+            // Use a shell channel instead of an exec as they kill started processes on disconnect
             val channel = withSshDispatcher(defaultTimeout) {
                 ch = session.createExecChannel(command)
                 ch!!
@@ -142,10 +166,12 @@ class SshSession private constructor(private val name: String, private val sessi
                 channel.open().verify(defaultTimeoutSeconds, TimeUnit.SECONDS)
             }
 
-            withTimeout(defaultTimeout) {
-                withContext(Dispatchers.IO) {
-                    input.bufferedReader().use {
-                        it.readText()
+            runBlocking {
+                withTimeout(defaultTimeout) {
+                    withContext(Dispatchers.IO) {
+                        input.bufferedReader().use {
+                            it.readText()
+                        }
                     }
                 }
             }
@@ -161,23 +187,26 @@ class SshSession private constructor(private val name: String, private val sessi
         require(open) { "The SSH session should not be closed" }
     }
 
-    fun close() = runBlocking<Unit>(dispatcher) {
+    fun close() {
         open = false
-        withSshDispatcher(defaultTimeout) {
-            channels.forEach {
+
+        Closeable { dispatcher.close() }.use {
+            withSshDispatcher(defaultTimeout) {
+                channels.forEach {
+                    try {
+                        it.close()
+                    } catch (e: Exception) {}
+                }
                 try {
-                    it.close()
+                    try {
+                        session.close(true)
+                    } catch (e: Exception) {}
                 } catch (e: Exception) {}
             }
-            try {
-                try {
-                    session.close(true)
-                } catch (e: Exception) {}
-            } catch (e: Exception) {}
         }
     }
 
-    fun forwardLocalToRemotePort(localPort: Int, remotePort: Int) = runBlocking<Unit> {
+    fun forwardLocalToRemotePort(localPort: Int, remotePort: Int) {
         withSshDispatcher(shortOperationTimeout) {
             session.startLocalPortForwarding(
                 SshdSocketAddress(SshdSocketAddress.LOCALHOST_IPV4, localPort),
@@ -186,7 +215,7 @@ class SshSession private constructor(private val name: String, private val sessi
         }
     }
 
-    fun uploadFiles(vararg pairs: Pair<Path, String>) = runBlocking<Unit> {
+    fun uploadFiles(vararg pairs: Pair<Path, String>) {
         createSftpClient().use { client ->
             pairs.forEach {
                 client.createParentPath(it.second)
@@ -197,7 +226,7 @@ class SshSession private constructor(private val name: String, private val sessi
         }
     }
 
-    fun uploadContent(content: ByteArray, targetPath: String) = runBlocking<Unit> {
+    fun uploadContent(content: ByteArray, targetPath: String) {
         createSftpClient().use { client ->
             client.createParentPath(targetPath)
             client.createFile(targetPath) { out ->
@@ -206,7 +235,7 @@ class SshSession private constructor(private val name: String, private val sessi
         }
     }
 
-    private suspend fun createSftpClient(): SftpWrapper {
+    private fun createSftpClient(): SftpWrapper {
         var client: SftpClient? = null
         return try {
             withSshDispatcher(defaultTimeout) {
@@ -222,21 +251,23 @@ class SshSession private constructor(private val name: String, private val sessi
         }
     }
 
-    private suspend fun <T> withSshDispatcher(
+    private inline fun <T> withSshDispatcher(
         timeoutMs: Long,
-        block: suspend CoroutineScope.() -> T
-    ): T = withTimeout(timeoutMs) {
-        withContext(dispatcher, block)
+        crossinline block: () -> T
+    ): T {
+        return dispatcher
+            .submit(
+                Callable {
+                    block()
+                }
+            )
+            .get(timeoutMs, TimeUnit.MILLISECONDS)
     }
-
-    private suspend fun <T> withSshDispatcher(
-        block: suspend CoroutineScope.() -> T
-    ): T = withContext(dispatcher, block)
 
     private inner class SftpWrapper(
         private val sftpClient: SftpClient
     ) : Closeable {
-        suspend fun createParentPath(
+        fun createParentPath(
             filePath: String
         ) {
             val parentTargetPath = filePath.substringBeforeLast('/', "")
@@ -244,16 +275,14 @@ class SshSession private constructor(private val name: String, private val sessi
                 val lstat = kotlin.runCatching { lstat(parentTargetPath) }
                 if (lstat.isFailure) {
                     createParentPath(parentTargetPath)
-                    withTimeout(shortOperationTimeout) {
-                        withContext(Companion.dispatcher) {
-                            mkdir(parentTargetPath)
-                        }
+                    withSshDispatcher(shortOperationTimeout) {
+                        mkdir(parentTargetPath)
                     }
                 }
             }
         }
 
-        suspend fun createFile(
+        fun createFile(
             targetPath: String,
             block: (OutputStream) -> Unit
         ) {
@@ -264,13 +293,13 @@ class SshSession private constructor(private val name: String, private val sessi
             )
         }
 
-        override fun close() = runBlocking {
+        override fun close() {
             withSshDispatcher(shortOperationTimeout) {
                 sftpClient.close()
             }
         }
 
-        private suspend fun write(path: String, modes: Collection<SftpClient.OpenMode>, writer: (OutputStream) -> Unit) {
+        private fun write(path: String, modes: Collection<SftpClient.OpenMode>, writer: (OutputStream) -> Unit) {
             var stream: OutputStream? = null
             try {
                 withSshDispatcher(shortOperationTimeout) {
@@ -290,18 +319,12 @@ class SshSession private constructor(private val name: String, private val sessi
             }
         }
 
-        private suspend fun mkdir(path: String) = withTimeout(shortOperationTimeout) {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            withContext(dispatcher) {
-                sftpClient.mkdir(path)
-            }
+        private fun mkdir(path: String) {
+            sftpClient.mkdir(path)
         }
 
-        private suspend fun lstat(path: String) = withTimeout(shortOperationTimeout) {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            withContext(dispatcher) {
-                sftpClient.lstat(path)
-            }
+        private fun lstat(path: String) {
+            sftpClient.lstat(path)
         }
     }
 }

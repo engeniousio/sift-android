@@ -117,23 +117,27 @@ class SshSession private constructor( // TODO: refactor this whole class, especi
                 channel.open().verify(defaultTimeoutSeconds, TimeUnit.SECONDS)
 
                 channel.invertedIn.apply {
-                    write(command.encodeToByteArray())
-                    write("\n".encodeToByteArray())
+                    write("$command\n".encodeToByteArray())
                     flush()
+                }
+                repeat(3) {
+                    Thread.sleep(1_000)
+                    channel.invertedIn.apply {
+                        write("\n\r\n\r\n".encodeToByteArray())
+                        flush()
+                    }
                 }
             }
 
             val logger = LoggerFactory.getLogger(SshSession::class.java)
-            if (logger.isInfoEnabled) {
-                thread(start = true, isDaemon = true) {
-                    input
-                        .bufferedReader()
-                        .apply {
-                            lineSequence().forEach {
-                                logger.info("[$name] $it")
-                            }
+            thread(start = true, isDaemon = true) {
+                input
+                    .bufferedReader()
+                    .use { reader ->
+                        reader.lineSequence().forEach {
+                            logger.info("[$name] $it")
                         }
-                }
+                    }
             }
         } catch (t: Throwable) {
             withSshDispatcher(shortOperationTimeout) {

@@ -94,8 +94,9 @@ class SshSession private constructor( // TODO: refactor this whole class, especi
                 null
             )
 
-            return identities.singleOrNull()
-                ?: throw RuntimeException("File $privateKeyPath should contain exactly one key")
+            return identities
+                ?.singleOrNull()
+                ?: throw RuntimeException("File $privateKeyPath should contain exactly one private key")
         }
     }
 

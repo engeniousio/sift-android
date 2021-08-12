@@ -33,8 +33,17 @@ class RemoteNodeDevicePlugin(
     private val relativeTestPath = "test." + globalConfiguration.testPackage.substringAfterLast('.')
 
     private val sessions = Collections.synchronizedList(mutableListOf<SshSession>())
-    private val devices = CompletableDeferred<List<RemoteNodeDevice>>()
-    private val tests = CompletableDeferred<List<TestCase>>()
+    private val devicesAndTests = CompletableDeferred<DeviceAndTests>()
+
+    class DeviceAndTests(
+        val devices: List<RemoteNodeDevice>,
+        val tests: List<TestCase>
+    )
+
+    inner class RemoteNodeDeviceProvider : DeviceProvider {
+        @OptIn(ExperimentalCoroutinesApi::class)
+        override fun provideDevices(): Set<Device> = devicesAndTests.getCompleted().devices.toSet()
+    }
 
     companion object {
         const val siftLocalBasePort = 9760
@@ -54,22 +63,20 @@ class RemoteNodeDevicePlugin(
         })
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun deviceProviders(context: DeviceProviderContext): Array<out DeviceProvider> {
-        return arrayOf(object : DeviceProvider {
-            override fun provideDevices(): Set<Device> = devices.getCompleted().toSet()
-        })
+        return arrayOf(RemoteNodeDeviceProvider())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun suiteLoaders(context: TestCaseProviderContext): Array<out TestCaseProvider> {
         return arrayOf(object : TestCaseProvider {
-            override fun loadTestSuite(): Collection<TestCase> = tests.getCompleted()
+            override fun loadTestSuite(): Collection<TestCase> = devicesAndTests.getCompleted().tests
         })
     }
 
     fun connect(): List<RemoteNodeDevice> {
-        val allDevices = mutableListOf<RemoteNodeDevice>()
+        val allDevices = Collections.synchronizedList(mutableListOf<RemoteNodeDevice>())
+        val allTests = Collections.synchronizedList(mutableListOf<TestCase>())
 
         globalConfiguration.nodes
             .forEachIndexed { index, it ->
@@ -125,7 +132,7 @@ class RemoteNodeDevicePlugin(
                             )
                         }
                         .let {
-                            tests.complete(it)
+                            allTests.addAll(it)
                         }
 
                     nodeInfo.devices
@@ -134,10 +141,8 @@ class RemoteNodeDevicePlugin(
                                 RemoteNodeDevice(node, device)
                             }
                         }
-                        .run {
-                            synchronized(devices) {
-                                toCollection(allDevices)
-                            }
+                        .let {
+                            allDevices.addAll(it)
                         }
                     sessions.add(session)
                 } catch (t: Throwable) {
@@ -146,7 +151,12 @@ class RemoteNodeDevicePlugin(
                 }
             }
 
-        devices.complete(allDevices)
+        devicesAndTests.complete(
+            DeviceAndTests(
+                allDevices,
+                allTests
+            )
+        )
         return allDevices
     }
 
@@ -181,7 +191,7 @@ class RemoteNodeDevicePlugin(
     ): String {
         val relativeConfigPath = "config.json"
         val encodedConfig = LocalConfigurationClient.jsonReader.encodeToString(
-            Config.WithInjectedCentralNodeVars.Serializer,
+            Config.WithInjectedCentralNodeVars,
             nodeConfiguration
         )
         uploadContent(encodedConfig.encodeToByteArray(), "$deploymentPath/$relativeConfigPath")

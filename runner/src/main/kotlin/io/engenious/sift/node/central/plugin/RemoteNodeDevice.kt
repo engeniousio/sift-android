@@ -20,8 +20,8 @@ class RemoteNodeDevice(
         device.uniqueIdentifier
     )
 
-    fun runTest(pool: Pool, testCase: TestCase): RunTesult {
-        return node.client.runTest(device, testCase).result
+    fun runTest(pool: Pool, testCase: TestCase, timeoutMillis: Long): RunTesult {
+        return node.client.runTest(device, testCase, timeoutMillis)
             .toTestCaseRunResult(pool)
     }
 

@@ -1,5 +1,6 @@
 package io.engenious.sift.node.central.plugin
 
+import io.engenious.sift.exceptions.ConfigurationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -25,6 +26,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.KeyPair
 import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -49,34 +51,42 @@ class SshSession private constructor( // TODO: refactor this whole class, especi
             val client = SshClient.setUpDefaultClient() // TODO: use same client instance for all sessions
             client.start()
 
-            return dispatcher
-                .submit(
-                    Callable {
-                        val session = try {
-                            val session = client
-                                .connect(username, host, port)
-                                .verify(defaultTimeoutSeconds, TimeUnit.SECONDS).session
-                            try {
-                                session.addPublicKeyIdentity(readKey(privateKeyPath))
-                                session.auth().verify(defaultTimeoutSeconds, TimeUnit.SECONDS)
-                                session
+            return try {
+                dispatcher
+                    .submit(
+                        Callable {
+                            val session = try {
+                                val session = client
+                                    .connect(username, host, port)
+                                    .verify(defaultTimeoutSeconds, TimeUnit.SECONDS).session
+                                try {
+                                    session.addPublicKeyIdentity(readKey(privateKeyPath))
+                                    session.auth().verify(defaultTimeoutSeconds, TimeUnit.SECONDS)
+                                    session
+                                } catch (t: Throwable) {
+                                    session.close()
+                                    throw t
+                                }
                             } catch (t: Throwable) {
-                                session.close()
+                                try {
+                                    client.stop()
+                                } finally {
+                                    dispatcher.close()
+                                }
                                 throw t
                             }
-                        } catch (t: Throwable) {
-                            try {
-                                client.stop()
-                            } finally {
-                                dispatcher.close()
-                            }
-                            throw t
-                        }
 
-                        SshSession(name, session, dispatcher)
-                    }
+                            SshSession(name, session, dispatcher)
+                        }
+                    )
+                    .get(defaultTimeoutSeconds, TimeUnit.SECONDS)
+            } catch (e: ExecutionException) {
+                val wrappedException = e.cause ?: e
+                throw ConfigurationException(
+                    "Cannot connect to node '$name' ($host:$port). Please verify host, port, login and key file are correct",
+                    wrappedException
                 )
-                .get(defaultTimeoutSeconds, TimeUnit.SECONDS)
+            }
         }
 
         private fun ExecutorService.close() {

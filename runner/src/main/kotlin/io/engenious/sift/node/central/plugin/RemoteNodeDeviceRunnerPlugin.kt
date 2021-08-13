@@ -15,7 +15,8 @@ class RemoteNodeDeviceRunnerPlugin : TestCaseRunnerFactory<TestCaseRunner> {
         return arrayOf(object : TestCaseRunner {
             override fun run(arguments: TestCaseRunnerArguments): RunTesult {
                 val device = context.device as RemoteNodeDevice
-                return device.runTest(context.pool, arguments.testCaseEvent.testCase)
+                val resultTimeoutMs = context.configuration.testOutputTimeout + 60_000
+                return device.runTest(context.pool, arguments.testCaseEvent.testCase, resultTimeoutMs)
                     .let { it as TestCaseRunResult }
                     .copy(
                         pool = context.pool,

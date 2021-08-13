@@ -36,14 +36,10 @@ import io.engenious.sift.nodeDevicesStrategy
 import io.engenious.sift.setupCommonTongsConfiguration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import org.koin.core.context.KoinContextHandler
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -79,8 +75,13 @@ class Node(
         KoinContextHandler.get().get<TongsRunner>()
             .extractProperty("testCaseRunnerManager") as TestCaseRunnerManager
     }
-    private val testResultSink = MutableSharedFlow<TestCaseRunResult>(100, onBufferOverflow = DROP_OLDEST)
-    private val testResultProvider = testResultSink.asSharedFlow()
+    private val testResultContainer = Collections.synchronizedMap(mutableMapOf<String, TestCaseRunResult>())
+    private val originalTestCases = Collections.synchronizedMap(mutableMapOf<String, TestCase>())
+
+    companion object {
+        private const val siftEventIndexKey = "__siftEventIndexKey"
+        private val logger = LoggerFactory.getLogger(Node::class.java)
+    }
 
     @Serializable
     class NodeInfo(
@@ -140,7 +141,11 @@ class Node(
                                     LoopingDeviceProviderFactory(),
                                     LoopingTestCaseProviderFactory(),
                                     LoopingTestCaseRunnerFactory(looperShutdownSignaller),
-                                    ResultListeningPlugin(testResultSink::tryEmit)
+                                    ResultListeningPlugin {
+                                        val taskId = it.testCase.properties[siftEventIndexKey]
+                                        testResultContainer[taskId] = it
+                                        logger.info("Received result $taskId from a runner")
+                                    }
                                 )
                             )
                         }
@@ -180,10 +185,12 @@ class Node(
         )
     }
 
+    @Serializable
+    data class TestRunRequestResult(val taskId: String)
+
     @ExperimentalCoroutinesApi
-    fun runTest(params: RunTest): TestRunResult {
-        val siftEventIndexKey = "__siftEventIndexKey"
-        val (originalTestCase, testTask) = synchronized(globalLock) {
+    fun runTest(params: RunTest): TestRunRequestResult {
+        val taskId = synchronized(globalLock) {
             val op = operator
             requireNotNull(op) { "The node is not initialized" }
 
@@ -214,50 +221,69 @@ class Node(
                     ?: throw IllegalArgumentException("Unknown test case type: $testCase")
             }
 
-            val testTask = TestCaseEvent(
-                TestCase(
-                    testCase.typeTag,
-                    testCase.testPackage,
-                    testCase.testClass,
-                    testCase.testMethod,
-                    testCase.readablePath,
-                    testCase.properties + mapOf(siftEventIndexKey to testTaskCounter.getAndIncrement().toString()),
-                    testCase.annotations,
-                    setOf(device),
-                    testCase.extra
-                ),
-                emptyList(),
-                0
-            ).apply {
-                addDeviceRunner(device, runner)
-            }
+            val taskId = testTaskCounter.getAndIncrement().toString()
+            originalTestCases[taskId] = testCase
+            val testTask = createTestTask(taskId, testCase, device, runner)
 
-            Pair(testCase, testTask)
+            testQueue
+                .getCompleted()
+                .offer(testTask)
+
+            taskId
         }
 
-        return runBlocking {
-            val testResult = async {
-                testResultProvider.first {
-                    it.testCase == testTask.testCase &&
-                        it.testCase.properties[siftEventIndexKey] == testTask.testCase.properties[siftEventIndexKey]
-                }
-            }
+        return TestRunRequestResult(taskId)
+    }
 
-            val queue = testQueue.getCompleted()
-            queue.offer(testTask)
+    private fun createTestTask(
+        taskId: String,
+        testCase: TestCase,
+        device: Device,
+        runner: TestCaseRunner
+    ): TestCaseEvent {
+        return TestCaseEvent(
+            TestCase(
+                testCase.typeTag,
+                testCase.testPackage,
+                testCase.testClass,
+                testCase.testMethod,
+                testCase.readablePath,
+                testCase.properties + mapOf(siftEventIndexKey to taskId),
+                testCase.annotations,
+                setOf(device),
+                testCase.extra
+            ),
+            emptyList(),
+            0
+        ).apply {
+            addDeviceRunner(device, runner)
+        }
+    }
 
-            val result = testResult.await()
-            TestRunResult(
-                RemoteTestCaseRunResult.fromTestCaseRunResult(
-                    /*
+    @Serializable
+    data class TakeRunResult(
+        val taskId: String
+    )
+
+    @Serializable
+    data class TakeRunResultResult(
+        val result: RemoteTestCaseRunResult?
+    )
+
+    fun takeRunResult(params: TakeRunResult): TakeRunResultResult {
+        val result = testResultContainer.remove(params.taskId) ?: return TakeRunResultResult(null)
+
+        val originalTestCase = originalTestCases.remove(params.taskId) ?: throw IllegalStateException()
+        return TakeRunResultResult(
+            RemoteTestCaseRunResult.fromTestCaseRunResult(
+                /*
                         Test case task was created with a modified test case (for proper scheduling),
                         thus this result links to that modified test case.
                         Make it link to the unmodified one instead.
                     */
-                    result.copy(testCase = originalTestCase)
-                )
+                result.copy(testCase = originalTestCase)
             )
-        }
+        )
     }
 
     fun shutdown(): Unit = synchronized(globalLock) {
@@ -275,8 +301,3 @@ class Node(
         }
     }
 }
-
-@Serializable
-data class TestRunResult(
-    val result: RemoteTestCaseRunResult
-)

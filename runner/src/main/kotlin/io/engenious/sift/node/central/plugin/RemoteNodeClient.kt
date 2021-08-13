@@ -2,8 +2,8 @@ package io.engenious.sift.node.central.plugin
 
 import com.github.tarcv.tongs.api.testcases.TestCase
 import io.engenious.sift.node.remote.Node
-import io.engenious.sift.node.remote.TestRunResult
 import io.engenious.sift.node.serialization.RemoteDevice
+import io.engenious.sift.node.serialization.RemoteTestCaseRunResult
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
@@ -21,7 +21,7 @@ import org.http4k.core.with
 import org.http4k.format.ConfigurableKotlinxSerialization
 import org.slf4j.LoggerFactory
 import java.io.IOException
-import java.lang.Thread.sleep
+import java.util.concurrent.TimeoutException
 
 open class RemoteNodeClient(port: Int) {
     private val baseUrl = "http://127.0.0.1:$port/rpc"
@@ -73,9 +73,23 @@ open class RemoteNodeClient(port: Int) {
 
     fun init(): Node.NodeInfo = doRequest("init", NoArguments())
 
-    fun runTest(device: RemoteDevice, testCase: TestCase): TestRunResult {
-        // TODO: check timeout
-        return doRequest("runTest", Node.RunTest(device, testCase))
+    fun runTest(device: RemoteDevice, testCase: TestCase, timeoutMillis: Long): RemoteTestCaseRunResult {
+        val taskResult: Node.TestRunRequestResult = doRequest("runTest", Node.RunTest(device, testCase))
+        val delay = 10_000L
+        val timeout = timeoutMillis + delay
+        logger.info("Will wait for test result for $timeout ms")
+
+        val timeoutTime = System.currentTimeMillis() + timeout
+        do {
+            val result: Node.TakeRunResultResult =
+                doRequest("takeRunResult", Node.TakeRunResult(taskResult.taskId))
+            if (result.result != null) {
+                return result.result
+            }
+
+            Thread.sleep(delay)
+        } while (System.currentTimeMillis() <= timeoutTime)
+        throw TimeoutException("Timed out getting test execution result")
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -146,7 +160,7 @@ open class RemoteNodeClient(port: Int) {
             }
 
             if (attempts > 0) {
-                sleep(sleepDelay)
+                Thread.sleep(sleepDelay)
                 attemptsLeft -= 1
                 sleepDelay *= 2
             } else {

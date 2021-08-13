@@ -23,6 +23,7 @@ object NodeCommand : Sift() {
                 JsonRpc.auto(KotlinxSerialization, NodeErrorHandler) {
                     method("init", handler(node::init))
                     method("runTest", handler(node::runTest))
+                    method("takeRunResult", handler(node::takeRunResult))
                     method("shutdown", handler(node::shutdown))
                 }
                     .asServer(LoopbackV4KtorCIO(siftRemotePort))

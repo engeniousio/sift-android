@@ -10,7 +10,6 @@ import com.github.tarcv.tongs.api.run.TestCaseRunRule
 import com.github.tarcv.tongs.api.run.TestCaseRunRuleAfterArguments
 import com.github.tarcv.tongs.api.run.TestCaseRunRuleContext
 import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
-import com.github.tarcv.tongs.model.AndroidDevice
 import com.github.tarcv.tongs.system.adb.CollectingShellOutputReceiver
 import io.engenious.sift.run.ResultData
 import io.engenious.sift.run.RunData
@@ -22,11 +21,7 @@ class ResultCollectingPlugin :
     // instead the conveyor is advanced automatically once the current test run is complete
 
     override fun testCaseRunRules(context: TestCaseRunRuleContext): Array<out TestCaseRunRule> {
-        return if (context.device is AndroidDevice) {
-            arrayOf(ResultCollectingTestCaseRunRule(previousStorage.enabledTests, storage.results, context))
-        } else {
-            emptyArray()
-        }
+        return arrayOf(ResultCollectingTestCaseRunRule(previousStorage.enabledTests, storage.results, context))
     }
 
     override fun initStorage(): ResultData = ResultData(previousStorage.runId)
@@ -38,7 +33,8 @@ open class ResultCollectingTestCaseRunRule(
     private val context: TestCaseRunRuleContext
 ) : TestCaseRunRule {
     private val screenshotPath = "/sdcard/failure.png"
-    private val device = context.device.deviceInterface as IDevice
+    private val screenshotDataName = "Failure screenshot"
+    private val device = context.device.deviceInterface as? IDevice
 
     override fun after(arguments: TestCaseRunRuleAfterArguments) {
         val testIdentifier = TestIdentifier.fromTestCase(arguments.result.testCase)
@@ -49,9 +45,16 @@ open class ResultCollectingTestCaseRunRule(
         val screenshot = if (status == Status.FAILED || status == Status.ERRORED) {
             val attemptIndex = arguments.result.totalFailureCount
 
-            pullScreenshot(attemptIndex.toString())?.let {
-                addScreenshotToHtmlReport(it, arguments)
-                it.toFile()
+            if (device != null) { // is a local device
+                pullScreenshot(device, attemptIndex.toString())?.let {
+                    addScreenshotToHtmlReport(it, arguments)
+                    it.toFile()
+                }
+            } else {
+                arguments.result.data
+                    .filterIsInstance<ImageReportData>()
+                    .lastOrNull { it.title == screenshotDataName }
+                    ?.let { File(it.imagePath) }
             }
         } else {
             null
@@ -68,18 +71,18 @@ open class ResultCollectingTestCaseRunRule(
         arguments: TestCaseRunRuleAfterArguments
     ) {
         val screenshotData = ImageReportData(
-            "Failure screenshot",
+            screenshotDataName,
             localFile
         )
         arguments.result = arguments.result.copy(data = listOf(screenshotData) + arguments.result.data)
     }
 
-    private fun pullScreenshot(nameSuffix: String) = try {
+    private fun pullScreenshot(deviceInterface: IDevice, nameSuffix: String) = try {
         val localFile = context.fileManager.testCaseFile(
             ScreenshotFileType,
             nameSuffix
         )
-        (context.device.deviceInterface as IDevice).apply {
+        deviceInterface.apply {
             pullFile(screenshotPath, localFile.create().absolutePath)
         }
 
@@ -91,6 +94,7 @@ open class ResultCollectingTestCaseRunRule(
     }
 
     override fun before() {
+        device ?: return
         try {
             device.executeShellCommand(
                 "rm $screenshotPath",

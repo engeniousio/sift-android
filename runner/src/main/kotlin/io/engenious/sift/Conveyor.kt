@@ -58,8 +58,15 @@ class Conveyor private constructor() {
 
     class ConveyorRunnable(
         private val initialConfiguration: Configuration.Builder.() -> Unit,
-        private val plugins: List<Plugin<Any, Any>>
+        plugins: List<Any>
     ) {
+        private val rules = ArrayList(plugins)
+
+        fun addRule(rule: Any): ConveyorRunnable {
+            rules.add(rule)
+            return this
+        }
+
         fun run(withWarnings: Boolean): Boolean {
             val configuration = Configuration.Builder()
                 .apply(initialConfiguration)
@@ -67,7 +74,7 @@ class Conveyor private constructor() {
                 .apply {
                     pluginsInstances.apply {
                         clear()
-                        addAll(plugins)
+                        addAll(rules)
                     }
                 }
 

@@ -33,7 +33,8 @@ open class ResultCollectingTestCaseRunRule(
     private val context: TestCaseRunRuleContext
 ) : TestCaseRunRule {
     private val screenshotPath = "/sdcard/failure.png"
-    private val device = context.device.deviceInterface as IDevice
+    private val screenshotDataName = "Failure screenshot"
+    private val device = context.device.deviceInterface as? IDevice
 
     override fun after(arguments: TestCaseRunRuleAfterArguments) {
         val testIdentifier = TestIdentifier.fromTestCase(arguments.result.testCase)
@@ -44,9 +45,16 @@ open class ResultCollectingTestCaseRunRule(
         val screenshot = if (status == Status.FAILED || status == Status.ERRORED) {
             val attemptIndex = arguments.result.totalFailureCount
 
-            pullScreenshot(attemptIndex.toString())?.let {
-                addScreenshotToHtmlReport(it, arguments)
-                it.toFile()
+            if (device != null) { // is a local device
+                pullScreenshot(device, attemptIndex.toString())?.let {
+                    addScreenshotToHtmlReport(it, arguments)
+                    it.toFile()
+                }
+            } else {
+                arguments.result.data
+                    .filterIsInstance<ImageReportData>()
+                    .lastOrNull { it.title == screenshotDataName }
+                    ?.let { File(it.imagePath) }
             }
         } else {
             null
@@ -63,18 +71,18 @@ open class ResultCollectingTestCaseRunRule(
         arguments: TestCaseRunRuleAfterArguments
     ) {
         val screenshotData = ImageReportData(
-            "Failure screenshot",
+            screenshotDataName,
             localFile
         )
         arguments.result = arguments.result.copy(data = listOf(screenshotData) + arguments.result.data)
     }
 
-    private fun pullScreenshot(nameSuffix: String) = try {
+    private fun pullScreenshot(deviceInterface: IDevice, nameSuffix: String) = try {
         val localFile = context.fileManager.testCaseFile(
             ScreenshotFileType,
             nameSuffix
         )
-        (context.device.deviceInterface as IDevice).apply {
+        deviceInterface.apply {
             pullFile(screenshotPath, localFile.create().absolutePath)
         }
 
@@ -86,6 +94,7 @@ open class ResultCollectingTestCaseRunRule(
     }
 
     override fun before() {
+        device ?: return
         try {
             device.executeShellCommand(
                 "rm $screenshotPath",

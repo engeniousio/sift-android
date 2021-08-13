@@ -8,25 +8,25 @@ class EnvVarsInjectorsTest {
     @Test
     fun emptyString() = assertEquals(
         "",
-        "".injectEnvVars().string
+        injectEnvVars("")
     )
 
     @Test
     fun stringWithoutVariables() = assertEquals(
         "foobar",
-        "foobar".injectEnvVars().string
+        injectEnvVars("foobar")
     )
 
     @Test
     fun dollarString() = assertEquals(
         "$",
-        "$".injectEnvVars().string
+        injectEnvVars("$")
     )
 
     @Test
     fun notExistingVarsAreNotReplaced() = assertEquals(
         "\$Yuio",
-        "\$Yuio".injectEnvVars().string
+        injectEnvVars("\$Yuio")
     )
 
     @Test
@@ -34,7 +34,7 @@ class EnvVarsInjectorsTest {
         val (name, value) = System.getenv().entries.first()
         assertEquals(
             value,
-            "\$$name".injectEnvVars().string
+            injectEnvVars("\$$name")
         )
     }
 
@@ -43,7 +43,7 @@ class EnvVarsInjectorsTest {
         val (name, _) = System.getenv().entries.first()
         assertEquals(
             "$$name",
-            "\\$$name".injectEnvVars().string
+            injectEnvVars("\\$$name")
         )
     }
 
@@ -52,7 +52,7 @@ class EnvVarsInjectorsTest {
         val (name, value) = System.getenv().entries.first()
         assertEquals(
             """\$value""",
-            """\\${"$"}$name""".injectEnvVars().string
+            injectEnvVars("""\\${"$"}$name""")
         )
     }
 
@@ -60,7 +60,7 @@ class EnvVarsInjectorsTest {
     fun doubleEscapeIsReplaced() {
         assertEquals(
             """aaBB\ccDD""",
-            """aaBB\\ccDD""".injectEnvVars().string
+            injectEnvVars("""aaBB\\ccDD""")
         )
     }
 
@@ -68,7 +68,7 @@ class EnvVarsInjectorsTest {
     fun varPrefixAtTheEndIsNotReplaced() {
         assertEquals(
             """aaBBccDD$""",
-            """aaBBccDD$""".injectEnvVars().string
+            injectEnvVars("""aaBBccDD$""")
         )
     }
 
@@ -77,7 +77,7 @@ class EnvVarsInjectorsTest {
         val (name, value) = System.getenv().entries.first()
         assertEquals(
             "$$value^",
-            "$\$$name^".injectEnvVars().string
+            injectEnvVars("$\$$name^")
         )
     }
 }

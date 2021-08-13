@@ -13,11 +13,16 @@ object TestCaseCollectingPlugin :
     override fun initStorage(): MutableSet<TestIdentifier> = Collections.synchronizedSet(HashSet<TestIdentifier>())
 
     override fun testCaseRules(context: TestCaseRuleContext): Array<out TestCaseRule> {
-        return arrayOf(object : CollectingTestCaseRule(storage) {
+        return arrayOf(object : CollectingTestCaseRule() {
             private val shouldAdvance = AtomicBoolean(true)
 
             override fun filter(testCaseEvent: TestCaseEvent): Boolean {
                 if (shouldAdvance.getAndSet(false)) {
+                    synchronized(testCases) {
+                        storage.addAll(
+                            testCases.map { TestIdentifier.fromTestCase(it) }
+                        )
+                    }
                     this@TestCaseCollectingPlugin.finalizeAndAdvanceConveyor<MutableSet<TestIdentifier>>()
                 }
 
@@ -27,17 +32,16 @@ object TestCaseCollectingPlugin :
     }
 }
 open class CollectingTestCaseRule(
-    private val _testCases: MutableSet<TestIdentifier> = Collections.synchronizedSet(HashSet<TestIdentifier>())
+    _testCases: MutableSet<TestCase> = HashSet()
 ) : TestCaseRule {
-    val testCases: Set<TestIdentifier>
+    private val _testCases = Collections.synchronizedSet(_testCases)
+    val testCases: Set<TestCase>
         get() = synchronized(_testCases) {
             HashSet(_testCases)
         }
 
     override fun transform(testCaseEvent: TestCaseEvent): TestCaseEvent {
-        testCaseEvent.testCase
-            .let { TestIdentifier.fromTestCase(it) }
-            .also { _testCases.add(it) }
+        _testCases.add(testCaseEvent.testCase)
         return testCaseEvent
     }
 }

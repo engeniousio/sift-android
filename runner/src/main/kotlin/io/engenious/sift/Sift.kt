@@ -23,10 +23,14 @@ import com.github.tarcv.tongs.ManualPooling
 import com.github.tarcv.tongs.PoolingStrategy
 import com.github.tarcv.tongs.Tongs
 import com.github.tarcv.tongs.api.testcases.NoTestCasesFoundException
+import com.github.tarcv.tongs.plugin.android.LocalDeviceProviderFactory
 import com.github.tarcv.tongs.pooling.NoDevicesForPoolException
 import com.github.tarcv.tongs.pooling.NoPoolLoaderConfiguredException
 import io.engenious.sift.Conveyor.Companion.conveyor
 import io.engenious.sift.list.NoOpPlugin
+import io.engenious.sift.node.central.plugin.RemoteNodeDevicePlugin
+import io.engenious.sift.node.central.plugin.RemoteNodeDeviceRunnerPlugin
+import io.engenious.sift.node.remote.NodeCommand
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
 import org.slf4j.Logger
@@ -67,6 +71,7 @@ object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed acro
             Command.INIT -> Sift.Init
             Command.LIST -> Sift.List
             Command.RUN -> Sift.Run
+            Command._NODE -> NodeCommand
         }
         command.apply {
             if (orchestratorOptions != null && localConfigurationOptions != null) {
@@ -90,14 +95,15 @@ object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed acro
     enum class Command(private val help: String) {
         INIT("Initialize Orchestrator with the list of available tests (or add newly added ones)"),
         LIST("Print all available tests"),
-        RUN("Run specified tests");
+        RUN("Run specified tests"),
+        _NODE("");
 
         override fun toString(): String = help
     }
 }
 
 interface ClientProvider {
-    val status: OrchestratorConfig.TestStatus
+    val status: Config.TestStatus
     val testPlan: String
 
     fun createClient(): Client
@@ -107,7 +113,7 @@ class ConfigurationGroup : OptionGroup("Local configuration specific options"), 
     val config by option("-c", "--config", help = "Path to a configuration file").required()
 
     override val testPlan: String = ""
-    override val status: OrchestratorConfig.TestStatus = OrchestratorConfig.TestStatus.ENABLED
+    override val status: Config.TestStatus = Config.TestStatus.ENABLED
 
     override fun createClient(): Client = LocalConfigurationClient(this.config)
 }
@@ -115,8 +121,8 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientPr
     val token by option(help = "Orchestrator token for Android. It can be viewed on Global Settings page").required()
     override val testPlan by option(help = "Orchestrator test plan name").default("default_android_plan")
     override val status by option(help = "Filter tests by status in Orchestrator (default: 'enabled')")
-        .enum<OrchestratorConfig.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
-        .default(OrchestratorConfig.TestStatus.ENABLED)
+        .enum<Config.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
+        .default(Config.TestStatus.ENABLED)
 
     val initSdk: String? by option(help = "Path to Android SDK for 'init' subcommand")
     val initSdkMissingError = "Please specify path to Android SDK with '--init-sdk' command-line option" +
@@ -142,12 +148,14 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientPr
 private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: String): ProcessedArgument<T, T> {
     val converter: (T) -> String = { it.name.toLowerCase(Locale.ROOT) }
     val maxLength = T::class.java.enumConstants.maxOf { converter(it).length }
-    val choicesHelp = T::class.java.enumConstants.joinToString("\n") {
-        val choice = converter(it)
-        val padding = " ".repeat(4 + maxLength - choice.length)
+    val choicesHelp = T::class.java.enumConstants
+        .filterNot { it.toString().isBlank() }
+        .joinToString("\n") {
+            val choice = converter(it)
+            val padding = " ".repeat(4 + maxLength - choice.length)
 
-        "- $choice$padding$it"
-    }
+            "- $choice$padding$it"
+        }
     return this.enum(key = converter)
         .help("\n```\n$message\n$choicesHelp\n```\n")
 }
@@ -163,11 +171,20 @@ abstract class Sift : Runnable {
 
     object List : Sift() {
         override fun run() {
-            val config = requestConfig()
+            val centralConfig = requestConfig()
+            val resolvedConfig = centralConfig.injectLocalNodeVars()
+            val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
+
             val tongsConfiguration = Configuration.Builder()
-                .setupCommonTongsConfiguration(config)
-                .applyLocalNodeConfiguration(config)
-                .withPoolingStrategy(nodeDevicesStrategy(config.mergedConfigWithInjectedVars.nodes))
+                .setupCommonTongsConfiguration(resolvedConfig)
+                .apply {
+                    if (thisNodeConfig != null) {
+                        applyLocalNodeConfiguration(resolvedConfig, thisNodeConfig)
+                    } else {
+                        applyStubLocalNodeConfiguration()
+                    }
+                }
+                .withPoolingStrategy(nodeDevicesStrategy(thisNodeConfiguration = thisNodeConfig))
                 .withOutput(Files.createTempDirectory(tempEmptyDirectoryName).toFile())
                 .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
                 .build(true)
@@ -207,7 +224,7 @@ abstract class Sift : Runnable {
                 it
             }
 
-            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig()
+            val centralConfig: Config.WithInjectedCentralNodeVars = requestConfig()
 
             val siftClient by lazy {
                 options.createClient()
@@ -216,7 +233,8 @@ abstract class Sift : Runnable {
             conveyor
                 .prepare(
                     {
-                        setupCommonTongsConfiguration(finalizedConfig)
+                        val resolvedConfig = centralConfig.injectLocalNodeVars()
+                        setupCommonTongsConfiguration(resolvedConfig)
 
                         val sdkPath = orchestratorOptions.initSdk
                             ?: System.getenv("ANDROID_SDK_ROOT").takeUnless { it.isNullOrBlank() }
@@ -224,7 +242,7 @@ abstract class Sift : Runnable {
                             ?: throw RuntimeException(orchestratorOptions.initSdkMissingError)
                         withAndroidSdk(File(sdkPath))
 
-                        finalizedConfig.mergedConfigWithInjectedVars.let { config ->
+                        centralConfig.let { config ->
                             ifValueSupplied(config.reportTitle) { withTitle(it) }
                             ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
                             withPoolingStrategy(allLocalDevicesStrategy)
@@ -262,19 +280,33 @@ abstract class Sift : Runnable {
 
     object Run : Sift() {
         override fun run() {
-            val finalizedConfig: MergedConfigWithInjectedVars = requestConfig()
+            val centralConfig: Config.WithInjectedCentralNodeVars = requestConfig()
 
             val siftClient by lazy {
                 options.createClient()
             }
 
+            val deviceRule = RemoteNodeDevicePlugin(
+                centralConfig.withNodes(nodes = centralConfig.nodes.filterNot(::isLocalhostNode))
+            )
+            val remoteDeviceSerials = deviceRule.connect()
+                .map { it.serial }
             conveyor
                 .prepare(
                     {
-                        setupCommonTongsConfiguration(finalizedConfig)
-                            .applyLocalNodeConfiguration(finalizedConfig)
-                        finalizedConfig.mergedConfigWithInjectedVars.let { config ->
-                            withPoolingStrategy(nodeDevicesStrategy(config.nodes))
+                        val resolvedConfig = centralConfig.injectLocalNodeVars()
+                        val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
+
+                        setupCommonTongsConfiguration(resolvedConfig)
+                            .apply {
+                                if (thisNodeConfig != null) {
+                                    applyLocalNodeConfiguration(resolvedConfig, thisNodeConfig)
+                                } else {
+                                    applyStubLocalNodeConfiguration()
+                                }
+                            }
+                        centralConfig.let { config ->
+                            withPoolingStrategy(nodeDevicesStrategy(thisNodeConfig, remoteDeviceSerials))
                             ifValueSupplied(config.reportTitle) { withTitle(it) }
                             ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
                         }
@@ -307,6 +339,8 @@ abstract class Sift : Runnable {
                         siftClient.postResults(options.testPlan, result)
                     }
                 )
+                .addRule(deviceRule)
+                .addRule(RemoteNodeDeviceRunnerPlugin())
                 .apply {
                     val exitCode = handleCommonErrors {
                         val result = run(withWarnings = true)
@@ -336,23 +370,28 @@ abstract class Sift : Runnable {
         1
     }
 
-    protected fun requestConfig(): MergedConfigWithInjectedVars {
+    protected fun requestConfig(): Config.WithInjectedCentralNodeVars {
         return options.createClient()
             .getConfiguration(options.testPlan)
-            .injectEnvVars()
+            .injectCentralNodeVars()
     }
 }
 
-private fun nodeDevicesStrategy(nodes: List<OrchestratorConfig.Node>) = PoolingStrategy().apply {
-    manual = ManualPooling().apply {
-        groupings = mapOf(
-            siftPoolName to (
-                nodes.singleLocalNode()
-                    .UDID
-                    ?.devices
-                    ?: emptyList()
-                )
-        )
+fun nodeDevicesStrategy(
+    thisNodeConfiguration: Config.NodeConfig.WithInjectedCentralNodeVars?,
+    additionalSerials: List<String> = emptyList()
+): PoolingStrategy {
+    return PoolingStrategy().apply {
+        manual = ManualPooling().apply {
+            groupings = mapOf(
+                siftPoolName to (
+                    thisNodeConfiguration
+                        ?.UDID
+                        ?.devices
+                        ?: emptyList()
+                    ) + additionalSerials
+            )
+        }
     }
 }
 
@@ -367,22 +406,29 @@ private val allLocalDevicesStrategy: PoolingStrategy by lazy {
     }
 }
 
-private fun Configuration.Builder.applyLocalNodeConfiguration(config: MergedConfigWithInjectedVars): Configuration.Builder {
-    apply {
-        ifValueSupplied(config.mergedConfigWithInjectedVars.nodes) {
-            val localNode = it.singleLocalNode()
-            withAndroidSdk(File(localNode.androidSdkPath))
+internal fun Configuration.Builder.applyLocalNodeConfiguration(
+    config: Config.WithInjectedCentralAndNodeVars,
+    thisNodeConfiguration: Config.NodeConfig.WithInjectedCentralAndNodeVars
+): Configuration.Builder {
+    withAndroidSdk(File(thisNodeConfiguration.androidSdkPath))
 
-            // Node variables have higher priority
-            val finalVariables = localNode.environmentVariables + config.mergedConfigWithInjectedVars.environmentVariables
-            withTestRunnerArguments(finalVariables)
-        }
-    }
+    // Node variables have higher priority
+    val finalVariables = thisNodeConfiguration.environmentVariables + config.environmentVariables
+    withTestRunnerArguments(finalVariables)
     return this
 }
 
-private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedConfigWithInjectedVars): Configuration.Builder {
-    merged.mergedConfigWithInjectedVars.let { it ->
+private fun Configuration.Builder.applyStubLocalNodeConfiguration(): Configuration.Builder {
+    withAndroidSdk(
+        Files.createTempDirectory(tempEmptyDirectoryName).toFile()
+    )
+    withPlugins(listOf("-${LocalDeviceProviderFactory::class.java.name}"))
+
+    return this
+}
+
+internal fun Configuration.Builder.setupCommonTongsConfiguration(merged: Config.WithInjectedCentralAndNodeVars): Configuration.Builder {
+    merged.let { it ->
         ifValueSupplied(it.appPackage) { withApplicationApk(File(it)) }
         ifValueSupplied(it.testPackage) { withInstrumentationApk(File(it)) }
         ifValueSupplied(it.testRetryLimit) { withRetryPerTestCaseQuota(it) }
@@ -395,13 +441,21 @@ private fun Configuration.Builder.setupCommonTongsConfiguration(merged: MergedCo
     return this
 }
 
-private const val tempEmptyDirectoryName = "sift"
-private const val siftPoolName = "devices"
+const val tempEmptyDirectoryName = "sift"
+const val siftPoolName = "devices"
 
-private fun Iterable<OrchestratorConfig.Node>.singleLocalNode(): OrchestratorConfig.Node {
-    return this.singleOrNull()
-        ?: throw SerializationException(
-            "Exactly one node (localhost) should be specified under the 'nodes' key" +
-                " (remote nodes will be supported in future versions)"
-        )
+internal fun <T : Config.NodeConfig.WithInjectedCentralNodeVars> Collection<T>.singleLocalNode(): T? {
+    require(this.isNotEmpty()) {
+        "At least one node should be defined"
+    }
+
+    val localNode = this.filter(::isLocalhostNode)
+    if (localNode.size > 1) {
+        throw SerializationException("Only one node can be a localhost node")
+    }
+    return localNode.singleOrNull()
+}
+
+fun isLocalhostNode(node: Config.NodeConfig.WithInjectedCentralNodeVars): Boolean {
+    return node.host == "127.0.0.1" && node.port == 22
 }

@@ -1,5 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlin_version"
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id 'application'
     id 'maven-publish'
 }
@@ -8,47 +9,48 @@ apply plugin: "org.jetbrains.kotlin.jvm"
 group 'io.engenious.sift'
 version '0.1-SNAPSHOT'
 
-repositories {
-    mavenCentral()
-    google()
-    maven { url "https://kotlin.bintray.com/kotlinx" }
-    jcenter()
-    maven { url "https://jitpack.io" }
-}
-
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
     implementation("com.github.engeniousio.tongs:tongs-runner") {
         version {
-            strictly("a02ce4bcfdf960c44e3dcc8bef13699a4ec6c99f")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-common") {
         version {
-            strictly("a02ce4bcfdf960c44e3dcc8bef13699a4ec6c99f")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-plugin-api") {
         version {
-            strictly("a02ce4bcfdf960c44e3dcc8bef13699a4ec6c99f")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
     implementation("com.github.engeniousio.tongs:tongs-plugin-android") {
         version {
-            strictly("a02ce4bcfdf960c44e3dcc8bef13699a4ec6c99f")
+            strictly("fe1a3b9968076538c1901dc02c008b505b142a84")
         }
     }
-    implementation("com.android.tools.ddms:ddmlib:22.0") // greater version from the above plugin is actually used
+    //noinspection GradleDependency // greater version from the above plugin is actually used
+    implementation("com.android.tools.ddms:ddmlib:22.0")
+
+    implementation "org.apache.sshd:sshd-core:${sshdVersion}"
+    implementation "org.apache.sshd:sshd-sftp:${sshdVersion}"
+
     implementation "com.github.ajalt.clikt:clikt:3.0.1"
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.1.0"
     implementation "org.http4k:http4k-client-okhttp:${http4kVersion}"
+    implementation "org.http4k:http4k-server-ktorcio:${http4kVersion}"
     implementation "org.http4k:http4k-core:${http4kVersion}"
     implementation "org.http4k:http4k-format-kotlinx-serialization:${http4kVersion}"
     implementation "org.http4k:http4k-jsonrpc:${http4kVersion}"
     implementation "org.http4k:http4k-multipart:${http4kVersion}"
-    implementation "com.squareup.okhttp3:logging-interceptor:4.9.0" // TODO: same version as OkHttpClient
+    implementation "org.koin:koin-core:2.1.0" // should be the same version as in upstream
+    implementation "com.squareup.okhttp3:logging-interceptor:4.9.0" // should be the same version as OkHttpClient
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
-    implementation 'org.slf4j:slf4j-log4j12:1.7.21'
+    implementation 'org.slf4j:slf4j-log4j12:1.7.30'
     implementation 'junit:junit:4.12'
 }
 
@@ -65,12 +67,20 @@ application {
     applicationName = 'sift'
     mainClassName = "io.engenious.sift.MainCliKt"
 }
-run {
+runShadow {
     workingDir = project.getProperties().getOrDefault("workingDir", project.projectDir)
 }
 
+installShadowDist.destinationDir = file(installShadowDist.destinationDir.path.replaceFirst('-shadow$', ''))
+
+tasks.named('installDist').configure({
+    dependsOn(installShadowDist)
+    enabled = false
+})
+
 publishing {
     publications {
+        //noinspection GroovyAssignabilityCheck
         maven(MavenPublication) {
             from components.java
             groupId = rootProject.group

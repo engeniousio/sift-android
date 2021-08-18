@@ -35,18 +35,3 @@ fun <T : Any> Map<KProperty<Any?>, Any?>.mapToDataClass(original: T): T {
             copyFunction.callBy(it + (copyFunction.instanceParameter!! to original)) as T
         }
 }
-
-fun isNonDefaultValue(value: Any): Boolean? {
-    return when (value) {
-        is Number -> value != 0
-        is String -> value.isNotEmpty()
-        is List<*> -> value.isNotEmpty()
-        else -> null
-    }
-}
-
-inline fun <T : Any> ifValueSupplied(value: T, block: (T) -> Unit) {
-    if (isNonDefaultValue(value) != false) {
-        block(value)
-    }
-}

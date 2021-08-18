@@ -242,11 +242,9 @@ abstract class Sift : Runnable {
                             ?: throw RuntimeException(orchestratorOptions.initSdkMissingError)
                         withAndroidSdk(File(sdkPath))
 
-                        centralConfig.let { config ->
-                            ifValueSupplied(config.reportTitle) { withTitle(it) }
-                            ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
-                            withPoolingStrategy(allLocalDevicesStrategy)
-                        }
+                        withTitle(centralConfig.reportTitle)
+                        withSubtitle(centralConfig.reportSubtitle)
+                        withPoolingStrategy(allLocalDevicesStrategy)
                     },
                     TestCaseCollectingPlugin,
                     { allTests, ctx ->
@@ -305,11 +303,10 @@ abstract class Sift : Runnable {
                                     applyStubLocalNodeConfiguration()
                                 }
                             }
-                        centralConfig.let { config ->
-                            withPoolingStrategy(nodeDevicesStrategy(thisNodeConfig, remoteDeviceSerials))
-                            ifValueSupplied(config.reportTitle) { withTitle(it) }
-                            ifValueSupplied(config.reportSubtitle) { withSubtitle(it) }
-                        }
+
+                        withPoolingStrategy(nodeDevicesStrategy(thisNodeConfig, remoteDeviceSerials))
+                        withTitle(centralConfig.reportTitle)
+                        withSubtitle(centralConfig.reportSubtitle)
                     },
                     TestCaseCollectingPlugin,
                     { allTests, ctx ->
@@ -427,17 +424,15 @@ private fun Configuration.Builder.applyStubLocalNodeConfiguration(): Configurati
     return this
 }
 
-internal fun Configuration.Builder.setupCommonTongsConfiguration(merged: Config.WithInjectedCentralAndNodeVars): Configuration.Builder {
-    merged.let { it ->
-        ifValueSupplied(it.appPackage) { withApplicationApk(File(it)) }
-        ifValueSupplied(it.testPackage) { withInstrumentationApk(File(it)) }
-        ifValueSupplied(it.testRetryLimit) { withRetryPerTestCaseQuota(it) }
-        ifValueSupplied(it.globalRetryLimit) { withTotalAllowedRetryQuota(it) }
-        ifValueSupplied(it.testsExecutionTimeout) { withTestOutputTimeout(it * 1_000) }
-        ifValueSupplied(it.outputDirectoryPath) { withOutput(File(it)) }
-        withCoverageEnabled(false)
-        withDdmTermination(true)
-    }
+internal fun Configuration.Builder.setupCommonTongsConfiguration(config: Config.WithInjectedCentralAndNodeVars): Configuration.Builder {
+    withApplicationApk(File(config.appPackage))
+    withInstrumentationApk(File(config.testPackage))
+    withRetryPerTestCaseQuota(config.testRetryLimit)
+    withTotalAllowedRetryQuota(config.globalRetryLimit)
+    withTestOutputTimeout(config.testsExecutionTimeout * 1_000)
+    withOutput(File(config.outputDirectoryPath))
+    withCoverageEnabled(false)
+    withDdmTermination(true)
     return this
 }
 

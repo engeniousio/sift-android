@@ -29,8 +29,6 @@ subprojects {
     repositories {
         mavenCentral()
         google()
-        maven { url "https://kotlin.bintray.com/kotlinx" }
-        jcenter()
-        maven { url "https://jitpack.io" }
+        maven { url 'https://jitpack.io' }
     }
 }

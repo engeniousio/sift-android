@@ -46,12 +46,18 @@ dependencies {
     implementation "org.http4k:http4k-format-kotlinx-serialization:${http4kVersion}"
     implementation "org.http4k:http4k-jsonrpc:${http4kVersion}"
     implementation "org.http4k:http4k-multipart:${http4kVersion}"
-    implementation "org.koin:koin-core:2.1.0" // should be the same version as in upstream
+    implementation "io.insert-koin:koin-core:2.1.6" // should be the same version as in upstream
     implementation "com.squareup.okhttp3:logging-interceptor:4.9.0" // should be the same version as OkHttpClient
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
     implementation 'org.slf4j:slf4j-log4j12:1.7.30'
     implementation 'junit:junit:4.12'
+
+    modules {
+        module("org.koin:koin-core") {
+            replacedBy("io.insert-koin:koin-core", 'group is changed')
+        }
+    }
 }
 
 compileKotlin {

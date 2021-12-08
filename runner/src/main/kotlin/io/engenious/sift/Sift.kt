@@ -121,7 +121,7 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientPr
     val token by option(help = "Orchestrator token for Android. It can be viewed on Global Settings page").required()
     override val testPlan by option(help = "Orchestrator test plan name").default("default_android_plan")
     override val status by option(help = "Filter tests by status in Orchestrator (default: 'enabled')")
-        .enum<Config.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
+        .enum<Config.TestStatus> { it.name.lowercase(Locale.ROOT) }
         .default(Config.TestStatus.ENABLED)
 
     val initSdk: String? by option(help = "Path to Android SDK for 'init' subcommand")
@@ -146,7 +146,7 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientPr
 }
 
 private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: String): ProcessedArgument<T, T> {
-    val converter: (T) -> String = { it.name.toLowerCase(Locale.ROOT) }
+    val converter: (T) -> String = { it.name.lowercase(Locale.ROOT) }
     val maxLength = T::class.java.enumConstants.maxOf { converter(it).length }
     val choicesHelp = T::class.java.enumConstants
         .filterNot { it.toString().isBlank() }

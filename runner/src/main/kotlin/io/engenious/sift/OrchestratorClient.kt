@@ -136,7 +136,7 @@ open class OrchestratorClient(private val token: String, allowInsecureTls: Boole
             .header("token", token)
             .query("platform", siftPlatform)
 
-            .query("status", Config.TestStatus.QUARANTINED.name.toUpperCase(Locale.ROOT))
+            .query("status", Config.TestStatus.QUARANTINED.name.uppercase(Locale.ROOT))
             .with(bodyLens of TestListRequest(testCases))
             .run(client)
     }
@@ -148,7 +148,7 @@ open class OrchestratorClient(private val token: String, allowInsecureTls: Boole
             .query("platform", siftPlatform)
 
             .query("testplan", testPlan)
-            .query("status", status.name.toUpperCase(Locale.ROOT))
+            .query("status", status.name.uppercase(Locale.ROOT))
         return client(request)
             .decodeBody<RunSettingsResponse>()
             .tests

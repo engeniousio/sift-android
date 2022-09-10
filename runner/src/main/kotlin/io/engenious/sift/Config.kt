@@ -24,8 +24,8 @@ data class Config(
     private val reportSubtitle: String = " ",
     private val testsExecutionTimeout: Int,
     private val environmentVariables: Map<String, String> = emptyMap(),
-//    private val setUpScriptPath: String, // TODO: implement this option
-//    private val tearDownScriptPath: String, // TODO: implement this option
+    private val setUpScriptPath: String, // TODO: implement this option
+    private val tearDownScriptPath: String, // TODO: implement this option
 
     private val nodes: List<NodeConfig>
 ) {
@@ -56,6 +56,12 @@ data class Config(
         val reportSubtitle: String
             get() = resolvedConfig.reportSubtitle
 
+        val setUpScriptPath: String
+            get() = resolvedConfig.setUpScriptPath
+
+        val tearDownScriptPath: String
+            get() = resolvedConfig.tearDownScriptPath
+
         open val nodes: List<NodeConfig.WithInjectedCentralNodeVars> by lazy {
             resolvedConfig.nodes.map {
                 NodeConfig.WithInjectedCentralNodeVars(it)
@@ -80,6 +86,14 @@ data class Config(
 
         fun withTestPackage(path: String) = WithInjectedCentralNodeVars(
             resolvedConfig.copy(testPackage = path)
+        )
+
+        fun withSetUpScriptPath(path: String) = WithInjectedCentralNodeVars(
+            resolvedConfig.copy(setUpScriptPath = path)
+        )
+
+        fun withTearDownScriptPath(path: String) = WithInjectedCentralNodeVars(
+            resolvedConfig.copy(tearDownScriptPath = path)
         )
 
         companion object Serializer : SurrogateSerializer<WithInjectedCentralNodeVars, Config>(Config.serializer()) {

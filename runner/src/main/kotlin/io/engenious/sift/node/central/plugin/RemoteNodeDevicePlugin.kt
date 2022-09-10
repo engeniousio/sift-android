@@ -29,9 +29,6 @@ import java.util.Collections
 class RemoteNodeDevicePlugin(
     private val globalConfiguration: Config.WithInjectedCentralNodeVars
 ) : DeviceProviderFactory<DeviceProvider>, RunRuleFactory<RunRule>, TestCaseProviderFactory<TestCaseProvider> {
-    private val relativeAutPath = "app." + globalConfiguration.appPackage.substringAfterLast('.')
-    private val relativeTestPath = "test." + globalConfiguration.testPackage.substringAfterLast('.')
-
     private val sessions = Collections.synchronizedList(mutableListOf<SshSession>())
     private val devicesAndTests = CompletableDeferred<DeviceAndTests>()
 
@@ -95,18 +92,53 @@ class RemoteNodeDevicePlugin(
                     val deploymentPath = it.resolveDeploymentPath { key ->
                         session.executeSingleCommandForStdout("echo $key").trim()
                     }
-                    val relativeBinPath = session.uploadBinaries(
-                        deploymentPath,
-                        selfJar, Paths.get(globalConfiguration.appPackage), Paths.get(globalConfiguration.testPackage)
-                    )
-                    val relativeConfigPath = session.uploadConfig(deploymentPath, resolveConfigForNode(it))
+
+                    val selfBin = selfJar.parent
+                        .resolveSibling("bin")
+                        .resolve("sift")
+
+                    val absoluteBinPath: String
+                    val nodeConfiguration: Config.WithInjectedCentralNodeVars
+                    val uploadTasks = buildUploadTasks {
+                        absoluteBinPath = scheduleUpload(selfBin, "$deploymentPath/bin/${selfBin.fileName}")
+
+                        scheduleUpload(selfJar, "$deploymentPath/lib/${selfJar.fileName}")
+
+                        nodeConfiguration = globalConfiguration
+                            .withNodes(listOf(it))
+                            .withAppPackage(
+                                scheduleUpload(
+                                    globalConfiguration.appPackage,
+                                    "$deploymentPath/app.${fileExtension(globalConfiguration.appPackage)}"
+                                )
+                            )
+                            .withTestPackage(
+                                scheduleUpload(
+                                    globalConfiguration.testPackage,
+                                    "$deploymentPath/test.${fileExtension(globalConfiguration.testPackage)}"
+                                )
+                            )
+                            .withSetUpScriptPath(
+                                ifNonEmptyScheduleUpload(
+                                    globalConfiguration.setUpScriptPath, "$deploymentPath/setUpScriptPath.sh"
+                                )
+                            )
+                            .withTearDownScriptPath(
+                                ifNonEmptyScheduleUpload(
+                                    globalConfiguration.tearDownScriptPath, "$deploymentPath/tearDownScriptPath.sh"
+                                )
+                            )
+                    }
+
+                    session.uploadFiles(uploadTasks)
+                    val relativeConfigPath = session.uploadConfig(deploymentPath, nodeConfiguration)
                     val localPort = session.setupPortForwarding(it, index)
 
                     try {
                         session.executeSingleBackgroundCommand(
                             "cd $deploymentPath && " +
-                                "chmod +x ./$relativeBinPath && " +
-                                "./$relativeBinPath config _node -c ./$relativeConfigPath"
+                                    "chmod +x ./$absoluteBinPath && " +
+                                    "./$absoluteBinPath config _node -c ./$relativeConfigPath"
                         )
                     } catch (e: IOException) {
                         throw RuntimeException("Failed to start the node ${it.name}")
@@ -160,6 +192,8 @@ class RemoteNodeDevicePlugin(
         return allDevices
     }
 
+    private fun fileExtension(path: String) = File(path).extension
+
     private fun disconnectAll() {
         synchronized(sessions) {
             sessions.forEach {
@@ -196,33 +230,6 @@ class RemoteNodeDevicePlugin(
         )
         uploadContent(encodedConfig.encodeToByteArray(), "$deploymentPath/$relativeConfigPath")
         return relativeConfigPath
-    }
-
-    private fun resolveConfigForNode(it: Config.NodeConfig.WithInjectedCentralNodeVars): Config.WithInjectedCentralNodeVars {
-        return globalConfiguration
-            .withNodes(listOf(it))
-            .withAppPackage(relativeAutPath)
-            .withTestPackage(relativeTestPath)
-    }
-
-    private fun SshSession.uploadBinaries(
-        deploymentPath: String,
-        selfJar: Path,
-        appPackage: Path,
-        testPackage: Path
-    ): String {
-        val binDir = selfJar.parent.resolveSibling("bin")
-        val selfBin = binDir.resolve("sift")
-
-        val relativeBinPath = "bin/${selfBin.fileName}"
-        val relativeJarPath = "lib/${selfJar.fileName}"
-        uploadFiles(
-            selfBin to "$deploymentPath/$relativeBinPath",
-            selfJar to "$deploymentPath/$relativeJarPath",
-            appPackage to "$deploymentPath/$relativeAutPath",
-            testPackage to "$deploymentPath/$relativeTestPath",
-        )
-        return relativeBinPath
     }
 
     private fun getSelfJarPath(): Path {

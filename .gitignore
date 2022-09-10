@@ -26,5 +26,6 @@ hs_err_pid*
 .idea
 build
 */build
+local.properties
 
 config.json

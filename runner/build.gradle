@@ -39,6 +39,7 @@ dependencies {
     implementation "org.apache.sshd:sshd-sftp:${sshdVersion}"
 
     implementation "com.github.ajalt.clikt:clikt:3.0.1"
+    implementation 'org.codehaus.plexus:plexus-utils:3.4.2'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.1.0"
     implementation "org.http4k:http4k-client-okhttp:${http4kVersion}"
     implementation "org.http4k:http4k-server-ktorcio:${http4kVersion}"
@@ -51,7 +52,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
     implementation 'org.slf4j:slf4j-log4j12:1.7.30'
-    implementation 'junit:junit:4.12'
+    implementation 'junit:junit:4.13.2'
 
     modules {
         module("org.koin:koin-core") {

@@ -31,6 +31,7 @@ import io.engenious.sift.list.NoOpPlugin
 import io.engenious.sift.node.central.plugin.RemoteNodeDevicePlugin
 import io.engenious.sift.node.central.plugin.RemoteNodeDeviceRunnerPlugin
 import io.engenious.sift.node.remote.NodeCommand
+import io.engenious.sift.node.remote.plugins.SetupScriptPlugin
 import io.engenious.sift.run.RunData
 import kotlinx.serialization.SerializationException
 import org.slf4j.Logger
@@ -289,11 +290,12 @@ abstract class Sift : Runnable {
             )
             val remoteDeviceSerials = deviceRule.connect()
                 .map { it.serial }
+
+            val resolvedConfig = centralConfig.injectLocalNodeVars()
+            val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
             conveyor
                 .prepare(
                     {
-                        val resolvedConfig = centralConfig.injectLocalNodeVars()
-                        val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
 
                         setupCommonTongsConfiguration(resolvedConfig)
                             .apply {
@@ -336,6 +338,10 @@ abstract class Sift : Runnable {
                         siftClient.postResults(options.testPlan, result)
                     }
                 )
+                .addRule(SetupScriptPlugin(
+                    resolvedConfig.setUpScriptPath,
+                    resolvedConfig.tearDownScriptPath
+                ))
                 .addRule(deviceRule)
                 .addRule(RemoteNodeDeviceRunnerPlugin())
                 .apply {

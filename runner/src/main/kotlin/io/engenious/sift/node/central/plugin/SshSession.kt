@@ -31,6 +31,9 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 class SshSession private constructor( // TODO: refactor this whole class, especially timeout and singleThreadExecutor
     private val name: String,
@@ -230,12 +233,12 @@ class SshSession private constructor( // TODO: refactor this whole class, especi
         }
     }
 
-    fun uploadFiles(vararg pairs: Pair<Path, String>) {
+    fun uploadFiles(tasks: List<UploadTask>) {
         createSftpClient().use { client ->
-            pairs.forEach {
-                client.createParentPath(it.second)
-                client.createFile(it.second) { out ->
-                    it.first.toFile().inputStream().copyTo(out)
+            tasks.forEach {
+                client.createParentPath(it.to)
+                client.createFile(it.to) { out ->
+                    it.from.toFile().inputStream().copyTo(out)
                 }
             }
         }
@@ -343,3 +346,43 @@ class SshSession private constructor( // TODO: refactor this whole class, especi
         }
     }
 }
+
+data class UploadTask(
+    val from: Path,
+    val to: String
+)
+class UploadTaskBuilder {
+    private val tasks: MutableList<UploadTask> = mutableListOf()
+
+    fun scheduleUpload(from: String, to: String): String {
+        return scheduleUpload(Paths.get(from), to)
+    }
+
+    fun ifNonEmptyScheduleUpload(from: String, to: String): String {
+        return if (from.isNotEmpty()) {
+            scheduleUpload(Paths.get(from), to)
+        } else {
+            ""
+        }
+    }
+
+    fun scheduleUpload(from: Path, to: String): String {
+        this.tasks.add(
+            UploadTask(from, to)
+        )
+        return to
+    }
+
+    fun build(): List<UploadTask> = tasks.toList()
+
+}
+@OptIn(ExperimentalContracts::class)
+inline fun buildUploadTasks(block: UploadTaskBuilder.() -> Unit): List<UploadTask> {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    val builder = UploadTaskBuilder()
+    block(builder)
+    return builder.build()
+}
+

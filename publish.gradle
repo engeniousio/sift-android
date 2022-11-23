@@ -1,0 +1,48 @@
+apply plugin: 'maven-publish'
+apply plugin: 'org.jetbrains.dokka'
+
+java {
+    withSourcesJar()
+}
+
+task dokkaJavadocJar(type: Jar, dependsOn: dokkaJavadoc) {
+    classifier = 'javadoc'
+    from dokkaJavadoc.outputDirectory
+}
+
+project.afterEvaluate {
+    publishing {
+        publications {
+            artifact(MavenPublication) {
+                from components.java
+                artifacts += dokkaJavadocJar
+
+                pom {
+                    name = POM_NAME
+                    description = POM_DESCRIPTION
+                    url = POM_URL
+
+                    licenses {
+                        license {
+                            name = POM_LICENCE_NAME
+                            url = POM_LICENCE_URL
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            name = POM_DEVELOPER_NAME
+                            organization = POM_DEVELOPER_ORGANIZATION
+                            organizationUrl = POM_DEVELOPER_ORGANIZATION_URL
+                        }
+                    }
+                    scm {
+                        connection = POM_SCM_CONNECTION
+                        developerConnection = POM_SCM_DEVELOPER_CONNECTION
+                        url = POM_SCM_URL
+                    }
+                }
+            }
+        }
+    }
+}

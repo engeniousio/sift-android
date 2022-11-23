@@ -28,3 +28,7 @@ build
 */build
 
 config.json
+/shapely_apks/
+/shapely_reports/
+/ci/
+/local.properties

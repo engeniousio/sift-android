@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tongs Execution</title>
+        <link href="https://fonts.googleapis.com/css?family=Roboto:regular,medium,thin,italic,mediumitalic,bold" rel="stylesheet">
+        <link href="../../static/bootstrap.min.css" rel="stylesheet">
+        <link href="../../static/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="../../static/spoon.css" rel="stylesheet">
+        <link href="../../static/tongs.css" rel="stylesheet">
+        <script src="../../static/jquery.min.js"></script>
+        <script src="../../static/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="hero-unit {{lower status}}">
+                <h1>{{readableMethodName testCase.testMethod}}</h1>
+                <p>{{simpleClassName testCase.testClass}} - Took {{timeTakenSeconds}}s on {{device.serial}} ({{replace device.modelName ' ' '_'}})</p>
+                <p>
+                    <a href="../{{pool.name}}.html">Other tests for this pool</a>
+                    {{#data}}{{#linkedFilePath}}
+                    - <a href="../../../{{unixPath linkedFilePath}}">{{title}}</a>
+                    {{/linkedFilePath}}{{/data}}
+                </p>
+            </div>
+            {{#data}}
+            {{^linkedFilePath}}
+            <div>
+                <a name="{{replace title ' ' '_'}}"><h1>{{title}}</h1></a>
+                {{#monoText}}
+                <pre class="test {{lower status}}">
+{{.}}
+</pre>
+                {{/monoText}}
+                {{#videoPath}}
+                <video class="diagnostic {{lower status}}" width="35%" height="35%" controls src="../../../{{unixPath .}}" type="video/mp4">
+                    Is video supported in this browser?
+                </video>
+                {{/videoPath}}
+                {{#imagePath}}
+                <img class="diagnostic {{lower status}}" width="35%" height="35%" src="../../../{{unixPath .}}"  />
+                {{/imagePath}}
+                {{#table}}
+                    {{#if (eq title 'Logcat')}}
+                        <form>
+                            <input type="text" id="filter" class="regex" placeholder="Search for regular expression"/>
+                            <input type="button" value="Hide" onclick="filterTable('none')">
+                            <input type="button" value="Show" onclick="filterTable('')">
+                        </form>
+                        <div>
+                            <table class="table logcat">
+                                <tr>{{#headers}}{{#if (eq title 'pid')}}<th>Process</th>{{/if}}{{/headers}}
+                                    {{#headers}}{{#if (eq title 'tag')}}<th>Tag</th>{{/if}}{{/headers}}
+                                    {{#headers}}{{#if (eq title 'logLevel')}}<th>Level</th>{{/if}}{{/headers}}
+                                    {{#headers}}{{#if (eq title 'time')}}<th>Time</th>{{/if}}{{/headers}}
+                                    {{#headers}}{{#if (eq title 'message')}}<th class="message">Message</th>{{/if}}{{/headers}}
+                                </tr>
+{{#rows}}
+                                <tr class="line {{#cells}}{{#if (eq header.title 'logLevel')}}{{text}}{{/if}}{{/cells}}">
+                                    {{#cells}}{{#if (eq header.title 'pid')}}<td>{{text}}</td>{{/if}}{{/cells}}
+                                    {{#cells}}{{#if (eq header.title 'tag')}}<td>{{text}}</td>{{/if}}{{/cells}}
+                                    {{#cells}}{{#if (eq header.title 'logLevel')}}<td>{{text}}</td>{{/if}}{{/cells}}
+                                    {{#cells}}{{#if (eq header.title 'time')}}<td style="white-space:nowrap;">{{text}}</td>{{/if}}{{/cells}}
+                                    {{#cells}}{{#if (eq header.title 'message')}}<td>{{text}}</td>{{/if}}{{/cells}}
+                                </tr>
+{{/rows}}
+                            </table>
+                        </div>
+                    {{else}}
+                        <table class="table">
+                            <tr>{{#headers}}<th>{{.}}</th>{{/headers}}</tr>
+                            {{#rows}}
+                            <tr class="line">{{#cells}}<td>{{.}}</td>{{/cells}}</tr>
+                            {{/rows}}
+                        </table>
+                    {{/if}}
+                {{/table}}
+            </div>
+            {{/linkedFilePath}}
+            {{/data}}
+            <a name="Stacktrace"><h1>Stacktrace(s)</h1></a>
+            <pre class="test {{lower status}}">{{#stackTraces}}
+{{fullTrace}}{{#unless @last}}
+
+{{/unless}}
+{{/stackTraces}}</pre>
+        </div>
+
+        <script type="text/javascript">
+            $('.test a').popover({
+                placement: 'top',
+                trigger: 'hover'
+            });
+        </script>
+        <script language="javascript">
+                function filterTable(mode) {
+                   rows=document.getElementsByClassName('logcat')[0].rows;
+                   regex=document.getElementById('filter').value;
+                   for (i=1; i<rows.length; ++i) {
+                     if (rows[i].textContent.match(regex)) {
+                       rows[i].style.display=mode;
+                     }
+                   }
+                }
+            </script>
+    </body>
+</html>

@@ -7,20 +7,63 @@ buildscript {
         google()
     }
     ext {
-        kotlin_version = '1.4.30'
+        //Sift Start
+        kotlin_version = '1.7.21'
         http4kVersion = "3.278.0"
         sshdVersion = '2.5.1'
         testVersion = '1.3.0'
         espressoVersion = testVersion.replaceFirst("^1", "3")
+        //Sift End
+
+        //Tongs Start
+        javaSourceCompatibility = JavaVersion.VERSION_11
+        javaTargetCompatibility = JavaVersion.VERSION_11
+
+        versions = [
+                androidTools : '26.5.3',
+                androidPlugin: '3.6.0',// should be the same as in buildscripts in the ondevice build.gradle file
+                handleBars   : '4.3.1',
+                junit        : '4.12',
+                jmock        : '2.8.2',
+                koin         : '3.2.2'
+        ]
+
+        deps = [
+                jsr305               : "com.google.code.findbugs:jsr305:3.0.2",
+                guava                : "com.google.guava:guava:31.1-jre",
+                ddmlib               : "com.android.tools.ddms:ddmlib:${versions.androidTools}",
+                sdklib               : "com.android.tools:common:${versions.androidTools}",
+                androidToolsCommon   : "com.android.tools:common:${versions.androidTools}",
+                commonsLang          : "org.apache.commons:commons-lang3:3.12.0",
+                commonsIo            : "commons-io:commons-io:2.8.0",
+                handleBars           : "com.github.jknack:handlebars:${versions.handleBars}",
+                handleBarsHuminize   : "com.github.jknack:handlebars-humanize:${versions.handleBars}",
+                gson                 : 'com.google.code.gson:gson:2.10',
+                slf4j                : 'org.slf4j:slf4j-log4j12:1.7.21',
+                hamcrest             : 'org.hamcrest:hamcrest-all:1.3',
+                jmock                : "org.jmock:jmock:${versions.jmock}",
+                jcommander           : "com.beust:jcommander:1.48",
+                jmockJUnit           : "org.jmock:jmock-junit4:${versions.jmock}",
+                junit                : "junit:junit:${versions.junit}",
+                junitParams          : 'pl.pragmatists:JUnitParams:1.1.1',
+                koin                 : "io.insert-koin:koin-core:${versions.koin}",
+                koinTest             : "io.insert-koin:koin-test:${versions.koin}",
+//                koinJava             : "org.koin:koin-java:2.0.1", // TODO: update to versions.koin once it is released
+                kotlinxCoroutinesCore: "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
+        ]
+        //Tongs End
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:3.6.0"
+        classpath "com.android.tools.build:gradle:7.3.1"
     }
 }
 
 plugins {
     id "org.jetbrains.kotlin.jvm" version "$kotlin_version" apply false
     id "org.jlleitschuh.gradle.ktlint" version "10.0.0" apply false
+
+//  Tongs Plugins
+    id "org.jetbrains.dokka" version "1.4.30" apply(false)
 }
 
 subprojects {

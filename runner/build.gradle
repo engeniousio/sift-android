@@ -12,26 +12,30 @@ version '0.1-SNAPSHOT'
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
-    implementation("com.github.engeniousio.tongs:tongs-runner") {
-        version {
-            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
-        }
-    }
-    implementation("com.github.engeniousio.tongs:tongs-common") {
-        version {
-            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
-        }
-    }
-    implementation("com.github.engeniousio.tongs:tongs-plugin-api") {
-        version {
-            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
-        }
-    }
-    implementation("com.github.engeniousio.tongs:tongs-plugin-android") {
-        version {
-            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
-        }
-    }
+    implementation project(path: ':tongs-runner')
+    implementation project(path: ':tongs-common')
+    implementation project(path: ':tongs-plugin-api')
+    implementation project(path: ':tongs-plugin-android')
+//    implementation("com.github.engeniousio.tongs:tongs-runner") {
+//        version {
+//            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
+//        }
+//    }
+//    implementation("com.github.engeniousio.tongs:tongs-common") {
+//        version {
+//            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
+//        }
+//    }
+//    implementation("com.github.engeniousio.tongs:tongs-plugin-api") {
+//        version {
+//            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
+//        }
+//    }
+//    implementation("com.github.engeniousio.tongs:tongs-plugin-android") {
+//        version {
+//            strictly("27ab04d4e6ca24c776618eb6153e50f4c60b5dbb")
+//        }
+//    }
     //noinspection GradleDependency // greater version from the above plugin is actually used
     implementation("com.android.tools.ddms:ddmlib:22.0")
 
@@ -61,11 +65,11 @@ dependencies {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_11
     kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn", "-Xinline-classes"]
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_11
     kotlinOptions.freeCompilerArgs = ["-Xopt-in=kotlin.RequiresOptIn"]
 }
 

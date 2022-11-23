@@ -1,0 +1,31 @@
+input.regex {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+th.message {
+	width: 50%;
+}
+
+.diagnostic {
+    margin:0 auto 50px;
+    display: block;
+}
+
+.diagnostic.pass {
+    display: none;
+}
+
+.diagnostic.warn {
+    display: none;
+}
+
+pre.test.pass {
+    display: none;
+}
+pre.test.warn {
+    background: #FFFFCC;
+}
+pre.test.fail {
+    background: #FFDDDC;
+}

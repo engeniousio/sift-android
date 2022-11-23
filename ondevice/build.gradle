@@ -23,14 +23,19 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
 }
 
 dependencies {
-    api("com.github.engeniousio.tongs:tongs-ondevice") {
-        version {
-            strictly("b937744b93b0e2947aa27d53938def865615e3a4")
-        }
-    }
+//    api("com.github.engeniousio.tongs:tongs-ondevice") {
+//        version {
+//            strictly("b937744b93b0e2947aa27d53938def865615e3a4")
+//        }
+//    }
+    implementation project(path: ':tongs-ondevice')
 
     compileOnly "androidx.test:core:$testVersion"
     compileOnly 'junit:junit:4.12'

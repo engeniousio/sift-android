@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tongs Execution</title>
+        <link href="https://fonts.googleapis.com/css?family=Roboto:regular,medium,thin,italic,mediumitalic,bold" rel="stylesheet">
+        <link href="../../static/bootstrap.min.css" rel="stylesheet">
+        <link href="../../static/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="../../static/spoon.css" rel="stylesheet">
+        <link href="../../static/tongs.css" rel="stylesheet">
+        <script src="../../static/jquery.min.js"></script>
+        <script src="../../static/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="hero-unit pass">
+                <h1>Api 22 Only[1]</h1>
+                <p>FilteredTest - Took 11.434s on emulator-5556 (Android_SDK_built_for_x86)</p>
+                <p>
+                    <a href="../emulators.html">Other tests for this pool</a>
+                    
+                    - <a href="../../../logcat/emulators/emulator-5556/com_github_tarcv_test_happy_FilteredTest_api22Only_1_-326f0c4f5f6b64bb.log">Logcat</a>
+                    
+                    - <a href="../../../logcat_json/emulators/emulator-5556/com_github_tarcv_test_happy_FilteredTest_api22Only_1_-326f0c4f5f6b64bb.json">Logcat as JSON</a>
+                    
+                </p>
+            </div>
+            
+            
+            <div>
+                <a name="Shell_output"><h1>Shell output</h1></a>
+                
+                <pre class="test pass">
+com.github.tarcv.test.happy.FilteredTest:
+.
+Time: 10.033
+
+OK (1 test)
+
+
+
+</pre>
+                
+                
+                
+                
+            </div>
+            
+            
+            
+            <div>
+                <a name="Screen_recording"><h1>Screen recording</h1></a>
+                
+                
+                <video class="diagnostic pass" width="35%" height="35%" controls src="../../../screenrecord/emulators/emulator-5556/com_github_tarcv_test_happy_FilteredTest_api22Only_1_-326f0c4f5f6b64bb.mp4" type="video/mp4">
+                    Is video supported in this browser?
+                </video>
+                
+                
+                
+            </div>
+            
+            
+            
+            <div>
+                <a name="Logcat"><h1>Logcat</h1></a>
+                
+                
+                
+                
+                    
+                        <form>
+                            <input type="text" id="filter" class="regex" placeholder="Search for regular expression"/>
+                            <input type="button" value="Hide" onclick="filterTable('none')">
+                            <input type="button" value="Show" onclick="filterTable('')">
+                        </form>
+                        <div>
+                            <table class="table logcat">
+                                <tr><th>Process</th>
+                                    <th>Tag</th>
+                                    <th>Level</th>
+                                    <th>Time</th>
+                                    <th class="message">Message</th>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24420</td>
+                                    <td>TestRunner</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.023</td>
+                                    <td>started: test[param &#x3D; |&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%](com.github.tarcv.test.happy.DangerousNamesTest)</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24420</td>
+                                    <td>MonitoringInstr</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.024</td>
+                                    <td>Activities that are still in CREATED to STOPPED: 0</td>
+                                </tr>
+
+                                <tr class="line warn">
+                                    <td>24420</td>
+                                    <td>ActivityTestRule</td>
+                                    <td>warn</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.024</td>
+                                    <td>getActivityIntent() returned null using default: Intent(Intent.ACTION_MAIN)</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>1633</td>
+                                    <td>ActivityManager</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.026</td>
+                                    <td>START u0 {act&#x3D;android.intent.action.MAIN flg&#x3D;0x14000000 cmp&#x3D;com.github.tarcv.tongstestapp.f1/com.github.tarcv.test.MainActivity} from uid 10108 on display 0</td>
+                                </tr>
+
+                                <tr class="line warn">
+                                    <td>1633</td>
+                                    <td>ActivityManager</td>
+                                    <td>warn</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.027</td>
+                                    <td>Activity start request from 10108 stopped</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.080</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>1400</td>
+                                    <td>MediaPlayerService</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.081</td>
+                                    <td>MediaPlayerService::getOMX</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>OMXClient</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.082</td>
+                                    <td>MuxOMX ctor</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>23298</td>
+                                    <td>OMXMaster</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.083</td>
+                                    <td>makeComponentInstance(OMX.google.h264.encoder) in mediacodec process</td>
+                                </tr>
+
+                                <tr class="line warn">
+                                    <td>24442</td>
+                                    <td>ACodec</td>
+                                    <td>warn</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.098</td>
+                                    <td>do not know color format 0x7f000789 &#x3D; 2130708361</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>ACodec</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.098</td>
+                                    <td>setupAVCEncoderParameters with [profile: Baseline] [level: Level41]</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>ACodec</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.098</td>
+                                    <td>[OMX.google.h264.encoder] cannot encode color aspects. Ignoring.</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>ACodec</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.098</td>
+                                    <td>[OMX.google.h264.encoder] cannot encode HDR static metadata. Ignoring.</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>ACodec</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.099</td>
+                                    <td>setupVideoEncoder succeeded</td>
+                                </tr>
+
+                                <tr class="line warn">
+                                    <td>24442</td>
+                                    <td>ACodec</td>
+                                    <td>warn</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.099</td>
+                                    <td>do not know color format 0x7f000789 &#x3D; 2130708361</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>23298</td>
+                                    <td>GraphicBufferSource</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.101</td>
+                                    <td>setting dataspace: 0x104</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>23298</td>
+                                    <td>GraphicBufferSource</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.101</td>
+                                    <td>requesting color aspects (R:2(Limited), P:1(BT709_5), M:1(BT709_5), T:3(SMPTE170M))</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>23298</td>
+                                    <td>SoftAVCEnc</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.104</td>
+                                    <td>Params width 1080 height 1920 level 41 colorFormat 0</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.108</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 8294400</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.118</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>23298</td>
+                                    <td>GraphicBufferSource</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.133</td>
+                                    <td>got buffer with new dataSpace #104</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.133</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 8294400</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24442</td>
+                                    <td>ACodec</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.133</td>
+                                    <td>dataspace changed to 0x10c10000 (R:2(Limited), P:1(BT709_5), M:1(BT709_5), T:3(SMPTE170M)) (R:2(Limited), S:1(BT709), T:3(SMPTE_170M))</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>MPEG4Writer</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.134</td>
+                                    <td>limits: 4294967295/0 bytes/us, bit rate: -1 bps and the estimated moov size 3193 bytes</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>23298</td>
+                                    <td></td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.135</td>
+                                    <td>HostConnection::get() New Host Connection established 0xb291bdc0, tid 24448</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.171</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.176</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.193</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 8294400</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.200</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.205</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.218</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 8294400</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.225</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.229</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.233</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>MPEG4Writer</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.234</td>
+                                    <td>setStartTimestampUs: 3254641333</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24442</td>
+                                    <td>MPEG4Writer</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.234</td>
+                                    <td>Earliest track starting time: 3254641333</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.252</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.258</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.262</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 8294400</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.270</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.272</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.298</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.322</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:40.345</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.343</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>LifecycleMonitor</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.345</td>
+                                    <td>Lifecycle status change: com.github.tarcv.test.MainActivity@7c1f8aa in: PRE_ON_CREATE</td>
+                                </tr>
+
+                                <tr class="line warn">
+                                    <td>24420</td>
+                                    <td>art</td>
+                                    <td>warn</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.349</td>
+                                    <td>Before Android 4.1, method android.graphics.PorterDuffColorFilter android.support.graphics.drawable.VectorDrawableCompat.updateTintFilter(android.graphics.PorterDuffColorFilter, android.content.res.ColorStateList, android.graphics.PorterDuff$Mode) would have incorrectly overridden the package-private method in android.graphics.drawable.Drawable</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.360</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>LifecycleMonitor</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.373</td>
+                                    <td>Lifecycle status change: com.github.tarcv.test.MainActivity@7c1f8aa in: CREATED</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>LifecycleMonitor</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.373</td>
+                                    <td>Lifecycle status change: com.github.tarcv.test.MainActivity@7c1f8aa in: STARTED</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>LifecycleMonitor</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.375</td>
+                                    <td>Lifecycle status change: com.github.tarcv.test.MainActivity@7c1f8aa in: RESUMED</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.378</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.383</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.394</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.395</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 8294400</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.397</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.398</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td></td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.400</td>
+                                    <td>HostConnection::get() New Host Connection established 0xa8739980, tid 24420</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.413</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.418</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.424</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.461</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td></td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.462</td>
+                                    <td>HostConnection::get() New Host Connection established 0xa8739e40, tid 24471</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24420</td>
+                                    <td>OpenGLRenderer</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.464</td>
+                                    <td>Initialized EGL, version 1.4</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>OpenGLRenderer</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.464</td>
+                                    <td>Swap behavior 1</td>
+                                </tr>
+
+                                <tr class="line warn">
+                                    <td>24420</td>
+                                    <td>OpenGLRenderer</td>
+                                    <td>warn</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.464</td>
+                                    <td>Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>OpenGLRenderer</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.464</td>
+                                    <td>Swap behavior 0</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.471</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.484</td>
+                                    <td>eglCreateContext: 0xa698ec20: maj 2 min 0 rcv 2</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>2131</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.497</td>
+                                    <td>eglMakeCurrent: 0xb5e052a0: ver 2 0 (tinfo 0xb5e032e0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.525</td>
+                                    <td>eglMakeCurrent: 0xa698ec20: ver 2 0 (tinfo 0xa699d990)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.526</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.533</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.536</td>
+                                    <td>eglMakeCurrent: 0xa698ec20: ver 2 0 (tinfo 0xa699d990)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.540</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.545</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.552</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 8294400</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.554</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.582</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.586</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>InputManagerEventInjectionStrategy</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.590</td>
+                                    <td>Creating injection strategy with input manager.</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>1633</td>
+                                    <td>ActivityManager</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.592</td>
+                                    <td>Displayed com.github.tarcv.tongstestapp.f1/com.github.tarcv.test.MainActivity: +254ms</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24420</td>
+                                    <td>ViewInteraction</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.597</td>
+                                    <td>Checking &#x27;MatchesViewAssertion{viewMatcher&#x3D;(is displayed on the screen to the user and with text: is &quot;Hello World!&quot;)}&#x27; assertion on view with id: com.github.tarcv.tongstestapp.f1:id/hello_text</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.610</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.612</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.628</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.634</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.642</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>1633</td>
+                                    <td>WindowManager</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.642</td>
+                                    <td>Destroying surface Surface(name&#x3D;com.android.launcher3/com.android.launcher3.Launcher) called by com.android.server.wm.WindowStateAnimator.destroySurface:2016 com.android.server.wm.WindowStateAnimator.destroySurfaceLocked:882 com.android.server.wm.WindowState.destroyOrSaveSurface:2100 com.android.server.wm.AppWindowToken.destroySurfaces:363 com.android.server.wm.AppWindowToken.notifyAppStopped:389 com.android.server.wm.WindowManagerService.notifyAppStopped:4463 com.android.server.am.ActivityStack.activityStoppedLocked:1252 com.android.server.am.ActivityManagerService.activityStopped:6903 </td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.647</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.653</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>1633</td>
+                                    <td>WindowManager</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.659</td>
+                                    <td>Destroying surface Surface(name&#x3D;Starting com.github.tarcv.tongstestapp.f1) called by com.android.server.wm.WindowStateAnimator.destroySurface:2016 com.android.server.wm.WindowStateAnimator.destroySurfaceLocked:882 com.android.server.wm.WindowState.destroyOrSaveSurface:2100 com.android.server.wm.AppWindowToken.destroySurfaces:363 com.android.server.wm.WindowStateAnimator.finishExit:565 com.android.server.wm.WindowStateAnimator.stepAnimationLocked:491 com.android.server.wm.WindowAnimator.updateWindowsLocked:303 com.android.server.wm.WindowAnimator.animateLocked:704 </td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.664</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.670</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.677</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.681</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.691</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.703</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.707</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.724</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.750</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.776</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.801</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:44.825</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>LifecycleMonitor</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.602</td>
+                                    <td>Lifecycle status change: com.github.tarcv.test.MainActivity@7c1f8aa in: PAUSED</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>LifecycleMonitor</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.602</td>
+                                    <td>running callback: android.support.test.rule.ActivityTestRule$LifecycleCallback@7b49380</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>24420</td>
+                                    <td>LifecycleMonitor</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.603</td>
+                                    <td>callback completes: android.support.test.rule.ActivityTestRule$LifecycleCallback@7b49380</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.609</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.625</td>
+                                    <td>eglMakeCurrent: 0xb2b28480: ver 2 0 (tinfo 0xb2b1c6d0)</td>
+                                </tr>
+
+                                <tr class="line debug">
+                                    <td>1342</td>
+                                    <td>gralloc_ranchu</td>
+                                    <td>debug</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.629</td>
+                                    <td>gralloc_alloc: Creating ashmem region of size 2691072</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>SurfaceFlinger</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.648</td>
+                                    <td>ro.sf.lcd_density must be defined as a build property</td>
+                                </tr>
+
+                                <tr class="line error">
+                                    <td>1342</td>
+                                    <td>EGL_emulation</td>
+                                    <td>error</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.654</td>
+                                    <td>tid 1342: eglCreateSyncKHR(1901): error 0x3004 (EGL_BAD_ATTRIBUTE)</td>
+                                </tr>
+
+                                <tr class="line info">
+                                    <td>24420</td>
+                                    <td>TestRunner</td>
+                                    <td>info</td>
+                                    <td style="white-space:nowrap;">05-20 19:46:49.668</td>
+                                    <td>finished: test[param &#x3D; |&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%|&amp;;&lt;&gt;()$&#x60;?[]#~&#x3D;%](com.github.tarcv.test.happy.DangerousNamesTest)</td>
+                                </tr>
+
+                            </table>
+                        </div>
+                    
+                
+            </div>
+            
+            
+            
+            
+            
+            
+            <a name="Stacktrace"><h1>Stacktrace(s)</h1></a>
+            <pre class="test pass">
+
+</pre>
+        </div>
+
+        <script type="text/javascript">
+            $('.test a').popover({
+                placement: 'top',
+                trigger: 'hover'
+            });
+        </script>
+        <script language="javascript">
+                function filterTable(mode) {
+                   rows=document.getElementsByClassName('logcat')[0].rows;
+                   regex=document.getElementById('filter').value;
+                   for (i=1; i<rows.length; ++i) {
+                     if (rows[i].textContent.match(regex)) {
+                       rows[i].style.display=mode;
+                     }
+                   }
+                }
+            </script>
+    </body>
+</html>

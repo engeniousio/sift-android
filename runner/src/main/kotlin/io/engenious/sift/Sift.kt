@@ -40,7 +40,7 @@ import java.nio.file.Files
 import java.util.Locale
 import kotlin.system.exitProcess
 
-object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed across nodes and devices") {
+object SiftMain: CliktCommand(name = "sift", help = "Run tests distributed across nodes and devices") {
     val mode by argument().enumWithHelp<Mode>("Where to get the run configuration from")
     val command by argument().enumWithHelp<Command>("Command to execute")
     val localConfigurationOptions by ConfigurationGroup().cooccurring()
@@ -279,22 +279,25 @@ abstract class Sift : Runnable {
     object Run : Sift() {
         override fun run() {
             val centralConfig: Config.WithInjectedCentralNodeVars = requestConfig()
-
+            logger.info("RUN centralConfig $centralConfig")
             val siftClient by lazy {
                 options.createClient()
             }
-
+            logger.info("RUN siftClient $siftClient")
             val deviceRule = RemoteNodeDevicePlugin(
                 centralConfig.withNodes(nodes = centralConfig.nodes.filterNot(::isLocalhostNode))
             )
+            logger.info("RUN deviceRule $deviceRule")
             val remoteDeviceSerials = deviceRule.connect()
                 .map { it.serial }
+            logger.info("RUN remoteDeviceSerials $remoteDeviceSerials")
             conveyor
                 .prepare(
                     {
                         val resolvedConfig = centralConfig.injectLocalNodeVars()
                         val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
-
+                        logger.info("RUN resolvedConfig $resolvedConfig")
+                        logger.info("RUN thisNodeConfig $thisNodeConfig")
                         setupCommonTongsConfiguration(resolvedConfig)
                             .apply {
                                 if (thisNodeConfig != null) {
@@ -319,20 +322,26 @@ abstract class Sift : Runnable {
                             postTests(allTests)
                             val enabledTests = getEnabledTests(options.testPlan, options.status)
                             val runId = createRun(options.testPlan)
+                            logger.info("RUN enabledTests $enabledTests")
+                            logger.info("RUN runId $runId")
                             RunData(runId, enabledTests)
                         }
                     },
                     FilteringTestCasePlugin,
                     ResultCollectingPlugin(),
                     { result, ctx ->
+                        logger.info("RUN ResultCollectingPlugin result.runId ${result.runId} noRunId $noRunId")
                         if (result.runId == noRunId) {
                             return@prepare
                         }
 
+                        logger.info("RUN ResultCollectingPlugin result.results.isEmpty() ${result.results.isEmpty()}")
                         if (result.results.isEmpty()) {
                             ctx.throwDeferred(RuntimeException("The run produced no results"))
                             return@prepare
                         }
+                        logger.info("RUN postResults testPlan ${options.testPlan}")
+                        logger.info("RUN postResults result $result")
                         siftClient.postResults(options.testPlan, result)
                     }
                 )
@@ -346,6 +355,7 @@ abstract class Sift : Runnable {
                             else -> 1
                         }
                     }
+                    logger.info("RUN exitCode $exitCode")
                     exitProcess(exitCode)
                 }
         }

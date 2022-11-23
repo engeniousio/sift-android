@@ -18,7 +18,7 @@ import com.github.tarcv.tongs.summary.Summarizer
 import com.github.tarcv.tongs.summary.SummaryCompiler
 import com.github.tarcv.tongs.summary.SummaryGeneratorHook
 import com.github.tarcv.tongs.summary.SummaryPrinter
-import org.koin.core.context.KoinContextHandler
+import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
 
 val summaryModule = module(createdAtStart = modulesCreatedAtStart) {
@@ -40,7 +40,7 @@ val summaryModule = module(createdAtStart = modulesCreatedAtStart) {
         )
     }
     factory {
-        val summarizer by KoinContextHandler.get().inject<Summarizer>()
+        val summarizer by GlobalContext.get().inject<Summarizer>()
         SummaryGeneratorHook(summarizer)
     }
 }

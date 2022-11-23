@@ -11,14 +11,11 @@
 
 package com.github.tarcv.tongs.io;
 
-import java.io.*;
-import java.util.function.Function;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import static org.apache.commons.io.FileUtils.copyInputStreamToFile;
-import static org.apache.commons.io.IOUtils.closeQuietly;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Files {
 
@@ -32,7 +29,13 @@ public class Files {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            closeQuietly(resourceAsStream);
+            try {
+                if(resourceAsStream != null) {
+                    resourceAsStream.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

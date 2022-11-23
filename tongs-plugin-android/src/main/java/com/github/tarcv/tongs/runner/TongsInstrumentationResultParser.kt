@@ -16,6 +16,7 @@ import com.android.ddmlib.testrunner.InstrumentationResultParser
 import com.github.tarcv.tongs.runner.listeners.BroadcastingListener
 import java.lang.RuntimeException
 import java.lang.reflect.InvocationTargetException
+import java.util.*
 
 class TongsInstrumentationResultParser(
         runName: String,
@@ -52,7 +53,7 @@ class TongsInstrumentationResultParser(
 
             tryParseAsStreamStart(linePrefix, line)
         } else if (insideStream) {
-            streamBuilder.appendln(line)
+            streamBuilder.appendLine(line)
         }
 
         try {
@@ -106,7 +107,7 @@ class TongsInstrumentationResultParser(
                 .filter {
                     // filter out pseudo prefixes that still part of the stream,
                     // and thus should not stop reading it
-                    it == it.toUpperCase()
+                    it == it.uppercase(Locale.ROOT)
                 }
 
         private val statusPrefix: String = prefixesClass.privateStaticFieldValue("STATUS")

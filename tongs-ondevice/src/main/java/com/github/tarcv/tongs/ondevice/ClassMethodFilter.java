@@ -20,6 +20,7 @@ import org.junit.runner.Description;
 import org.junit.runner.manipulation.Filter;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 public class ClassMethodFilter extends Filter {
     private final String expectedClassName;
@@ -54,11 +55,7 @@ public class ClassMethodFilter extends Filter {
 
     private static  String decode(String encodedName) {
         byte[] bytes = Base64.decode(encodedName.replaceAll("_", "="), Base64.NO_WRAP);
-        try {
-            return new String(bytes, "utf-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     @Override

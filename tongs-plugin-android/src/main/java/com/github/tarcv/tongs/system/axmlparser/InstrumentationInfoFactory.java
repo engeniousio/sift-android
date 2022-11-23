@@ -85,7 +85,13 @@ public final class InstrumentationInfoFactory {
         } catch (IOException e) {
             throw new RuntimeException("Unable to parse test app AndroidManifest.xml.", e);
         } finally {
-            IOUtils.closeQuietly(is);
+            try {
+                if(is != null) {
+                    is.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

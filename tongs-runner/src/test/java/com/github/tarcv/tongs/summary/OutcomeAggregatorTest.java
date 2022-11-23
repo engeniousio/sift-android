@@ -11,23 +11,25 @@
 
 package com.github.tarcv.tongs.summary;
 
-import com.github.tarcv.tongs.api.devices.Device;
-import com.github.tarcv.tongs.api.devices.Pool;
-import com.github.tarcv.tongs.api.run.ResultStatus;
-import com.github.tarcv.tongs.api.result.StackTrace;
-import com.github.tarcv.tongs.api.result.TestCaseRunResult;
-import org.junit.Test;
-
 import static com.github.tarcv.tongs.api.devices.Pool.Builder.aDevicePool;
+import static com.github.tarcv.tongs.api.run.ResultStatus.ERROR;
+import static com.github.tarcv.tongs.api.run.ResultStatus.IGNORED;
+import static com.github.tarcv.tongs.api.run.ResultStatus.PASS;
 import static com.github.tarcv.tongs.api.run.TestCaseRunResultExtKt.aTestResult;
 import static com.github.tarcv.tongs.api.run.TestCaseRunResultExtKt.anErrorTrace;
 import static com.github.tarcv.tongs.summary.PoolSummary.Builder.aPoolSummary;
-import static com.github.tarcv.tongs.api.run.ResultStatus.*;
 import static com.github.tarcv.tongs.summary.Summary.Builder.aSummary;
-import static java.util.Arrays.asList;
-import static java.util.Collections.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
+
+import com.github.tarcv.tongs.api.devices.Device;
+import com.github.tarcv.tongs.api.devices.Pool;
+import com.github.tarcv.tongs.api.run.ResultStatus;
+
+import org.junit.Test;
 
 public class OutcomeAggregatorTest {
     private final Pool pool = aDevicePool().addDevice(Device.TEST_DEVICE).build();

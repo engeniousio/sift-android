@@ -74,11 +74,7 @@ public class Summarizer {
 
     static GsonBuilder testRecorderGsonBuilder() {
         return new GsonBuilder()
-                .registerTypeAdapter(Class.class, new JsonSerializer<Class<?>>() {
-                    public JsonElement serialize(Class<?> src, Type typeOfSrc, JsonSerializationContext context) {
-                        return new JsonPrimitive(src.getName());
-                    }
-                })
+                .registerTypeAdapter(Class.class, (JsonSerializer<Class<?>>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getName()))
                 .enableComplexMapKeySerialization();
     }
 

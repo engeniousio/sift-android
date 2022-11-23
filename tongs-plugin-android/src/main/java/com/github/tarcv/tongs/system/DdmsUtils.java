@@ -84,7 +84,7 @@ public class DdmsUtils {
     }
 
     static String singleQuote(String str) {
-        final StringBuffer buffer = new StringBuffer("'");
+        final StringBuilder buffer = new StringBuilder("'");
         final Matcher matcher = SINGLE_QUOTE_PATTERN.matcher(str);
         final String replacement = Matcher.quoteReplacement("'\\''");
         while (matcher.find()) {

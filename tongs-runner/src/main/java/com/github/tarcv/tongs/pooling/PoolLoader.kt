@@ -43,6 +43,9 @@ class PoolLoader(private val configuration: Configuration, private val devicePro
         val devicePoolLoader = pickPoolLoader(configuration)
         logger.info("Picked {}", devicePoolLoader.javaClass.simpleName)
         val pools = devicePoolLoader.loadPools(devices)
+        pools?.forEach {
+            logger.info("Pool name ${it.name}, devices ${it.devices}")
+        }
         if (pools.isEmpty()) {
             throw IllegalArgumentException("No pools were found with your configuration. Please review connected devices")
         }

@@ -107,16 +107,17 @@ data class Config(
         val name: String,
         val host: String,
         val port: Int,
-        val username: String,
-        @Deprecated("Will be replaced with pathToCertificate in 1.0") val password: String? = null,
-        val pathToCertificate: String? = null,
         val deploymentPath: String,
-
+        val UDID: UdidLists?,
         val androidSdkPath: String,
-
         val environmentVariables: Map<String, String> = emptyMap(),
+        val authorization: AuthorizationType,
 
-        val UDID: UdidLists?
+//        val username: String,
+//        @Deprecated("Will be replaced with pathToCertificate in 1.0") val password: String? = null,
+//        val pathToCertificate: String? = null,
+
+
     ) {
 
         open class WithInjectedCentralNodeVars(
@@ -138,9 +139,9 @@ data class Config(
                 get() = resolvedConfig.name
 
             val username: String
-                get() = resolvedConfig.username
+                get() = resolvedConfig.authorization.data.username
             val pathToCertificate: String?
-                get() = resolvedConfig.pathToCertificate
+                get() = resolvedConfig.authorization.data.privateKey
 
             val host: String
                 get() = resolvedConfig.host
@@ -179,6 +180,21 @@ data class Config(
          */
         @LocalNodeEnvironment
         val simulators: List<String>? = null
+    )
+
+    @Serializable
+    data class AuthorizationType(
+        val type: String,
+        val data: AuthorizationData
+    )
+
+    @Serializable
+    data class AuthorizationData(
+        val username: String,
+        val password: String?,
+        val privateKey: String?,
+        val publicKey: String?,
+        val passphrase: String?
     )
 
     @Suppress("unused")

@@ -92,6 +92,7 @@ class TongsRunner(private val poolLoader: PoolLoader,
                     logger.info("RUN pool ${pool.name} devices ${pool.devices}")
                     val testCases = createTestSuiteLoaderForPool(pool)
                         .also {
+                            logger.info("RUN all TestCaseEvents ${it.size}")
                             if (it.isEmpty()) {
                                 throw NoTestCasesFoundException("No tests cases were found")
                             }
@@ -103,12 +104,16 @@ class TongsRunner(private val poolLoader: PoolLoader,
                             testCaseRules.all { rule -> rule.filter(testCaseEvent) }
                         }
                         .also {
+                            logger.info("RUN filter testCaseRules $testCaseRules")
+                            logger.info("RUN testCaseEvents after filter ${it.size}")
                             if (it.isEmpty()) {
                                 throw NoTestCasesFoundException(
                                     "All tests cases were filtered out by test case rules"
                                 )
                             }
                         }
+                    logger.info("RUN testCases $testCases")
+                    logger.info("RUN testCases.size ${testCases.size}")
 
                     pool.devices.forEach { device ->
                         testCaseRunnerManager

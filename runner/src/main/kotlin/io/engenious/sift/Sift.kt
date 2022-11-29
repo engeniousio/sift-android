@@ -1,6 +1,5 @@
 package io.engenious.sift
 
-import com.android.SdkConstants
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
@@ -323,6 +322,7 @@ abstract class Sift : Runnable {
                     },
                     TestCaseCollectingPlugin,
                     { allTests, ctx ->
+                        logger.info("RUN allTests $allTests")
                         if (allTests.isEmpty()) {
                             ctx.throwDeferred(RuntimeException("No tests were found in the test APK"))
                             return@prepare RunData(noRunId, emptyMap())

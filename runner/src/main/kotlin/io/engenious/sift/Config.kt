@@ -116,8 +116,6 @@ data class Config(
 //        val username: String,
 //        @Deprecated("Will be replaced with pathToCertificate in 1.0") val password: String? = null,
 //        val pathToCertificate: String? = null,
-
-
     ) {
 
         open class WithInjectedCentralNodeVars(

@@ -176,8 +176,11 @@ abstract class Sift : Runnable {
     object List : Sift() {
         override fun run() {
             val centralConfig = requestConfig()
+            logger.info("LIST centralConfig $centralConfig")
             val resolvedConfig = centralConfig.injectLocalNodeVars()
+            logger.info("LIST resolvedConfig $resolvedConfig")
             val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
+            logger.info("LIST thisNodeConfig $thisNodeConfig")
 
             val tongsConfiguration = Configuration.Builder()
                 .setupCommonTongsConfiguration(resolvedConfig)
@@ -193,6 +196,7 @@ abstract class Sift : Runnable {
                 .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
                 .build(true)
 
+            logger.info("LIST tongsConfiguration $tongsConfiguration")
             handleCommonErrors {
                 try {
                     Tongs(tongsConfiguration).run(allowThrows = true)

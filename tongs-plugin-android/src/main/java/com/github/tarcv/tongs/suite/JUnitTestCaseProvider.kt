@@ -129,6 +129,7 @@ class JUnitTestCaseProvider(
         context.pool.devices
                 .filterIsInstance(AndroidDevice::class.java) // TODO: handle other types of devices
                 .map { device ->
+                    logger.info("LIST loadTestSuite deviceName - ${device.name}")
                     async {
                         kotlin.runCatching {
                             try {
@@ -299,6 +300,7 @@ class JUnitTestCaseProvider(
         val logCatCollector = LogcatReceiver(device)
         val testRun = testRunFactory.createCollectingRun(
                 device, context.pool, testCollectingListener, withOnDeviceLib)
+        logger.info("LIST collectTestData createCollectingRun")
         try {
             clearLogcat(device.deviceInterface)
             logCatCollector.start(this@JUnitTestCaseProvider.javaClass.simpleName)

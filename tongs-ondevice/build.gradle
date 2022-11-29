@@ -17,7 +17,7 @@ apply plugin: 'com.android.library'
 apply from: file('../publishAndroid.gradle')
 
 android {
-    compileSdkVersion 27
+    compileSdk 33
 
 
     defaultConfig {
@@ -37,6 +37,11 @@ android {
     lintOptions {
         disable 'InvalidPackage' // JUnit-4.12 references java.lang.management
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    buildToolsVersion '30.0.3'
 }
 
 dependencies {

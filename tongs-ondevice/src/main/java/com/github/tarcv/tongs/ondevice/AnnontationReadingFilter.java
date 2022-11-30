@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AnnontationReadingFilter extends Filter {
@@ -39,7 +40,7 @@ public class AnnontationReadingFilter extends Filter {
             final ArrayList<Description> children = description.getChildren();
             final ArrayList<String> childrenIds = new ArrayList<>(children.size());
             for (Description child : children) {
-                childrenIds.add(String.format("%d-%d-%s",
+                childrenIds.add(String.format(Locale.ROOT, "%d-%d-%s",
                         System.identityHashCode(child), child.hashCode(), child.getDisplayName()));
             }
             info.put("sId1", System.identityHashCode(description));

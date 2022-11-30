@@ -18,9 +18,16 @@ import com.github.tarcv.tongs.api.devices.Pool;
 import com.github.tarcv.tongs.api.run.TestCaseEvent;
 import com.github.tarcv.tongs.injector.runner.RemoteAndroidTestRunnerFactoryInjector;
 import com.github.tarcv.tongs.model.AndroidDevice;
-import com.github.tarcv.tongs.runner.listeners.*;
+import com.github.tarcv.tongs.runner.listeners.IResultProducer;
+import com.github.tarcv.tongs.runner.listeners.ResultProducer;
+import com.github.tarcv.tongs.runner.listeners.RunListener;
+import com.github.tarcv.tongs.runner.listeners.RunListenerAdapter;
+import com.github.tarcv.tongs.runner.listeners.TestCollectorResultProducer;
 import com.github.tarcv.tongs.suite.TestCollectingListener;
+
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +35,7 @@ import java.util.List;
 
 public class AndroidTestRunFactory {
 
+    private static final Logger logger = LoggerFactory.getLogger(AndroidTestRunFactory.class);
     private final TongsConfiguration configuration;
 
     public AndroidTestRunFactory(TongsConfiguration configuration) {
@@ -71,7 +79,8 @@ public class AndroidTestRunFactory {
                 device,
                 configuration,
                 withOnDeviceLib);
-
+        logger.info("LIST createCollectingRun testRunParameters {}", testRunParameters);
+        logger.info("LIST createCollectingRun testCase {}", testRunParameters.getTest());
         List<ITestRunListener> testRunListeners = new ArrayList<>();
         testRunListeners.add(testCollectingListener);
 

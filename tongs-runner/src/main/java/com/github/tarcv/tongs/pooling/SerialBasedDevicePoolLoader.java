@@ -35,9 +35,8 @@ public class SerialBasedDevicePoolLoader implements DevicePoolLoader {
     }
 
     @Override
-	public Collection<Pool> loadPools(List<Device> devices) {
+    public Collection<Pool> loadPools(List<Device> devices) {
         final Collection<Pool> pools = new ArrayList<>();
-
         for (Entry<String, Collection<String>> pool : manualPooling.groupings.entrySet()) {
             final Pool.Builder poolBuilder = aDevicePool().withName(pool.getKey());
             for (String serial : pool.getValue()) {
@@ -51,7 +50,6 @@ public class SerialBasedDevicePoolLoader implements DevicePoolLoader {
             }
             pools.add(poolBuilder.build());
         }
-
-		return pools;
-	}
+        return pools;
+    }
 }

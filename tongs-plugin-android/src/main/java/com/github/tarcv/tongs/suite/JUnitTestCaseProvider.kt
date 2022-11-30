@@ -24,7 +24,7 @@ import com.github.tarcv.tongs.runner.JsonInfoDecorder
 import com.github.tarcv.tongs.runner.TestInfo
 import com.github.tarcv.tongs.runner.listeners.LogcatReceiver
 import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import com.google.gson.JsonParser.parseString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -49,14 +49,14 @@ class JUnitTestCaseProvider(
         fun calculateDeviceIncludes(input: Sequence<Pair<AndroidDevice, Set<TestIdentifier>>>)
                 : Map<TestIdentifier, List<AndroidDevice>> {
             return input
-                    .flatMap { (device, tests) ->
-                        tests
-                                .asSequence()
-                                .map { Pair(it, device) }
-                    }
-                    .groupBy({ it.first }) {
-                        it.second
-                    }
+                .flatMap { (device, tests) ->
+                    tests
+                        .asSequence()
+                        .map { Pair(it, device) }
+                }
+                .groupBy({ it.first }) {
+                    it.second
+                }
         }
 
         fun decodeMessages(testInfoMessages: Collection<LogCatMessage>): List<JsonObject> {
@@ -64,13 +64,13 @@ class JUnitTestCaseProvider(
 
                 override fun compareTo(other: MessageKey): Int {
                     return id.compareTo(other.id)
-                            .let {
-                                if (it == 0) {
-                                    lineIndex.compareTo(other.lineIndex)
-                                } else {
-                                    it
-                                }
+                        .let {
+                            if (it == 0) {
+                                lineIndex.compareTo(other.lineIndex)
+                            } else {
+                                it
                             }
+                        }
                 }
 
                 override fun equals(other: Any?): Boolean {
@@ -92,34 +92,32 @@ class JUnitTestCaseProvider(
                 }
             }
 
-            val jsonParser = JsonParser()
             return testInfoMessages.asSequence()
-                    .map { it.message }
-                    .fold(ArrayList<Pair<MessageKey, String>>()) { acc, message ->
-                        val (prefix, line) = message.split(':', limit = 2)
-                        val (id, lineIndex) = prefix.split('-', limit = 2)
+                .map { it.message }
+                .fold(ArrayList<Pair<MessageKey, String>>()) { acc, message ->
+                    val (prefix, line) = message.split(':', limit = 2)
+                    val (id, lineIndex) = prefix.split('-', limit = 2)
 
-                        acc.apply {
-                            acc.add(MessageKey(id, lineIndex) to line)
+                    acc.apply {
+                        acc.add(MessageKey(id, lineIndex) to line)
+                    }
+                }
+                .groupBy({ it.first.id })
+                .values
+                .flatMap { pair ->
+                    pair
+                        .sortedBy { it.first.lineIndex.toInt(16) }
+                        .map { it.second }
+                        .let { arrayContent ->
+                            val json = arrayContent.joinToString("", "[", "]")
+                            parseString(json)
+                                .asJsonArray
+                                .asSequence()
+                                .filter { !it.isJsonNull }
+                                .map { it.asJsonObject }
+                                .toList()
                         }
-                    }
-                    .groupBy({ it.first.id })
-                    .values
-                    .flatMap { pair ->
-                        pair
-                                .sortedBy { it.first.lineIndex.toInt(16) }
-                                .map { it.second }
-                                .let { arrayContent ->
-                                    val json = arrayContent.joinToString("", "[", "]")
-                                    jsonParser
-                                            .parse(json)
-                                            .asJsonArray
-                                            .asSequence()
-                                            .filter { !it.isJsonNull }
-                                            .map { it.asJsonObject }
-                                            .toList()
-                                }
-                    }
+                }
         }
 
     }
@@ -127,105 +125,119 @@ class JUnitTestCaseProvider(
     @Throws(NoTestCasesFoundException::class)
     override fun loadTestSuite(): Collection<TestCase> = runBlocking {
         context.pool.devices
-                .filterIsInstance(AndroidDevice::class.java) // TODO: handle other types of devices
-                .map { device ->
-                    async {
-                        kotlin.runCatching {
-                            try {
-                                collectTestsFromLogOnlyRun(device)
-                            } catch (e: InterruptedException) {
-                                throw e
-                            } catch (e: Exception) {
-                                logger.warn("Didn't collect test cases from ${device.name}", e)
-                                throw e
-                            }
+            .filterIsInstance(AndroidDevice::class.java) // TODO: handle other types of devices
+            .map { device ->
+                logger.info("LIST loadTestSuite deviceName - ${device.name}")
+                async {
+                    kotlin.runCatching {
+                        try {
+                            collectTestsFromLogOnlyRun(device)
+                        } catch (e: InterruptedException) {
+                            throw e
+                        } catch (e: Exception) {
+                            logger.warn("Didn't collect test cases from ${device.name}", e)
+                            throw e
                         }
                     }
                 }
-                .awaitAll()
-                .let { collectedInfoResults ->
-                    val collectedInfos = collectedInfoResults.mapNotNull { it.getOrNull() }
-                    if (collectedInfos.isEmpty()) {
-                        val lastCause = if (collectedInfoResults.isEmpty()) {
-                            null
-                        } else {
-                            collectedInfoResults.last().exceptionOrNull()
-                        }
-                        logger.warn("Didn't collect any test cases using Android Debug Bridge", lastCause)
-                        return@let emptyList<TestCase>()
-                    }
-
-                    collectedInfos.forEach {
-                        if (!it.hasOnDeviceLibrary) {
-                            logger.warn("Instrumented tests on ${it.device} are linked without 'ondevice' library." +
-                                    " Some tests might be NOT executed.")
-                        }
-                        it.device.setHasOnDeviceLibrary(it.hasOnDeviceLibrary)
-                    }
-                    val hasOnDeviceLibrary = collectedInfos.any { it.hasOnDeviceLibrary }
-
-                    val annotationInfos = if (!hasOnDeviceLibrary) {
-                        logger.warn("It seems '-ondevice' dependency is missing on all devices in ${context.pool.name}." +
-                                "Falling back to getting annotation data from bytecode in the instrumentation APK (such data will not be 100% accurate).")
-
-                        val allTests = collectedInfos.asSequence()
-                                .map { it.tests }
-                                .reduce { acc, set -> acc + set }
-                        val instrumentationApk = context.configuration.instrumentationApk.let {
-                            if (it == null) {
-                                logger.info("Path to the instrumentation APK is not specified. Trying to pull it from a device")
-                                try {
-                                    withContext(Dispatchers.IO) {
-                                        pullTestApkFromDevice(context.pool.devices.first() as AndroidDevice)
-                                    }
-                                } catch (e: Exception) {
-                                    // TODO:
-                                    throw RuntimeException("Failed to pull the instrumentation APK from a device", e)
-                                }
-                            } else {
-                                it
-                            }
-                        }
-                        val testInfo = apkTestInfoReader.readTestInfo(
-                                instrumentationApk,
-                                allTests
-                        )
-
-                        testInfo.associateBy { it.identifier }
+            }
+            .awaitAll()
+            .let { collectedInfoResults ->
+                val collectedInfos = collectedInfoResults.mapNotNull { it.getOrNull() }
+                if (collectedInfos.isEmpty()) {
+                    val lastCause = if (collectedInfoResults.isEmpty()) {
+                        null
                     } else {
-                        collectedInfos
-                                .asSequence()
-                                .flatMap { it.infoMessages.entries.asSequence() }
-                                .associateBy({ it.key }) {
-                                    it.value
-                                }
+                        collectedInfoResults.last().exceptionOrNull()
                     }
-                    finalizeTestInformation(collectedInfos, annotationInfos)
+                    logger.warn(
+                        "Didn't collect any test cases using Android Debug Bridge",
+                        lastCause
+                    )
+                    return@let emptyList<TestCase>()
                 }
+
+                collectedInfos.forEach {
+                    if (!it.hasOnDeviceLibrary) {
+                        logger.warn(
+                            "Instrumented tests on ${it.device} are linked without 'ondevice' library." +
+                                    " Some tests might be NOT executed."
+                        )
+                    }
+                    it.device.setHasOnDeviceLibrary(it.hasOnDeviceLibrary)
+                }
+                val hasOnDeviceLibrary = collectedInfos.any { it.hasOnDeviceLibrary }
+
+                val annotationInfos = if (!hasOnDeviceLibrary) {
+                    logger.warn(
+                        "It seems '-ondevice' dependency is missing on all devices in ${context.pool.name}." +
+                                "Falling back to getting annotation data from bytecode in the instrumentation APK (such data will not be 100% accurate)."
+                    )
+
+                    val allTests = collectedInfos.asSequence()
+                        .map { it.tests }
+                        .reduce { acc, set -> acc + set }
+                    val instrumentationApk = context.configuration.instrumentationApk.let {
+                        if (it == null) {
+                            logger.info("Path to the instrumentation APK is not specified. Trying to pull it from a device")
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    pullTestApkFromDevice(context.pool.devices.first() as AndroidDevice)
+                                }
+                            } catch (e: Exception) {
+                                // TODO:
+                                throw RuntimeException(
+                                    "Failed to pull the instrumentation APK from a device",
+                                    e
+                                )
+                            }
+                        } else {
+                            it
+                        }
+                    }
+                    val testInfo = apkTestInfoReader.readTestInfo(
+                        instrumentationApk,
+                        allTests
+                    )
+
+                    testInfo.associateBy { it.identifier }
+                } else {
+                    collectedInfos
+                        .asSequence()
+                        .flatMap { it.infoMessages.entries.asSequence() }
+                        .associateBy({ it.key }) {
+                            it.value
+                        }
+                }
+                finalizeTestInformation(collectedInfos, annotationInfos)
+            }
     }
 
     private fun pullTestApkFromDevice(device: AndroidDevice): File {
         val adb = (device).deviceInterface
         val pathReceiver = CollectingOutputReceiver()
         adb.executeShellCommand(
-                "pm path ${context.configuration.instrumentationPackage}",
-                pathReceiver
+            "pm path ${context.configuration.instrumentationPackage}",
+            pathReceiver
         )
         val devicePath = pathReceiver.output
-                .trim()
-                .removePrefix("package:")
-                // some devices output '=com.package.test' at the end of this line:
-                .replaceFirst(Regex("""=[\w.]+$"""), "")
+            .trim()
+            .removePrefix("package:")
+            // some devices output '=com.package.test' at the end of this line:
+            .replaceFirst(Regex("""=[\w.]+$"""), "")
         val localPath = Files.createTempDirectory("tongs").resolve("test.apk")
         adb.pullFile(devicePath, localPath.toString())
         return localPath.toFile()
     }
 
-    private fun finalizeTestInformation(collectedInfos: List<CollectedInfo>, annotationInfos: Map<TestIdentifier, TestInfo>): Collection<TestCase> {
+    private fun finalizeTestInformation(
+        collectedInfos: List<CollectedInfo>,
+        annotationInfos: Map<TestIdentifier, TestInfo>
+    ): Collection<TestCase> {
         val devicesInfo = collectedInfos
-                .asSequence()
-                .map { it.device to it.tests }
-                .let { calculateDeviceIncludes(it) }
+            .asSequence()
+            .map { it.device to it.tests }
+            .let { calculateDeviceIncludes(it) }
 
         val allTests = devicesInfo.keys
 
@@ -237,35 +249,41 @@ class JUnitTestCaseProvider(
 
         if (testsWithoutInfo.isNotEmpty()) {
             logger.warn(
-                    "In pool ${context.pool.name} received no annotation information" +
-                            " for ${testsWithoutInfo.joinToString(", ")}"
+                "In pool ${context.pool.name} received no annotation information" +
+                        " for ${testsWithoutInfo.joinToString(", ")}"
             )
         }
 
         return annotationInfos
-                .map { (identifier, info) ->
-                    TestCase(
-                            ApkTestCase::class.java,
-                            info.`package`,
-                            identifier.className,
-                            identifier.testName,
-                            info.readablePath,
-                            emptyMap(),
-                            info.annotations,
-                            devicesInfo[identifier]?.toSet()
-                    )
-                }
+            .map { (identifier, info) ->
+                TestCase(
+                    ApkTestCase::class.java,
+                    info.`package`,
+                    identifier.className,
+                    identifier.testName,
+                    info.readablePath,
+                    emptyMap(),
+                    info.annotations,
+                    devicesInfo[identifier]?.toSet()
+                )
+            }
     }
 
     private suspend fun collectTestsFromLogOnlyRun(device: AndroidDevice): CollectedInfo {
         var hasOnDeviceLibrary = true
         var collectionResult = collectTestData(device, hasOnDeviceLibrary)
-
+        logger.info("LIST collectionResult ${collectionResult.second}")
+        logger.info("LIST logCatMessages ${collectionResult.first}")
+        collectionResult.first.forEach {
+            logger.info("LIST logCatMessage ${it.message}")
+        }
         collectionResult.second.let {
             if (it is TestCollectingListener.Result.Failed) {
-                logger.warn("Failed to collect list of tests using 'ondevice' library," +
-                        " retrying without the library." +
-                        " Error is ${it.lastFailure}")
+                logger.warn(
+                    "Failed to collect list of tests using 'ondevice' library," +
+                            " retrying without the library." +
+                            " Error is ${it.lastFailure}"
+                )
 
                 hasOnDeviceLibrary = false
                 collectionResult = collectTestData(device, hasOnDeviceLibrary)
@@ -293,25 +311,31 @@ class JUnitTestCaseProvider(
     }
 
     private suspend fun collectTestData(
-            device: AndroidDevice,
-            withOnDeviceLib: Boolean): Pair<List<LogCatMessage>, TestCollectingListener.Result> = withContext(Dispatchers.IO) {
+        device: AndroidDevice,
+        withOnDeviceLib: Boolean
+    ): Pair<List<LogCatMessage>, TestCollectingListener.Result> = withContext(Dispatchers.IO) {
         val testCollectingListener = TestCollectingListener()
         val logCatCollector = LogcatReceiver(device)
         val testRun = testRunFactory.createCollectingRun(
-                device, context.pool, testCollectingListener, withOnDeviceLib)
+            device, context.pool, testCollectingListener, withOnDeviceLib
+        )
+        logger.info("LIST createCollectingRun")
         try {
             clearLogcat(device.deviceInterface)
             logCatCollector.start(this@JUnitTestCaseProvider.javaClass.simpleName)
-
+            logger.info("LIST logCatCollector start")
             testRun.execute()
 
             delay(logcatWaiterSleep) // make sure all logcat messages are read
             logCatCollector.stop()
-
+            logger.info("LIST logCatCollector stop")
+            logCatCollector.messages.forEach {
+                logger.info("LIST logCatCollector message ${it.message}")
+            }
             Pair(
-                    logCatCollector.messages
-                            .filter { logCatMessage -> "Tongs.TestInfo" == logCatMessage.header.tag },
-                    testCollectingListener.result
+                logCatCollector.messages
+                    .filter { logCatMessage -> "Tongs.TestInfo" == logCatMessage.header.tag },
+                testCollectingListener.result
             )
         } finally {
             logCatCollector.stop()
@@ -319,15 +343,15 @@ class JUnitTestCaseProvider(
     }
 
     internal fun tryCollectingAndDecodingInfos(
-            testInfoMessages: List<LogCatMessage>
+        testInfoMessages: List<LogCatMessage>
     ): Map<TestIdentifier, TestInfo> {
         return try {
             decodeMessages(testInfoMessages)
-                    .let {
-                        jsonInfoDecoder.decodeStructure(it.toList())
-                    }
-                    .asReversed() // make sure the first entry for duplicate keys is used
-                    .associateBy { it.identifier }
+                .let {
+                    jsonInfoDecoder.decodeStructure(it.toList())
+                }
+                .asReversed() // make sure the first entry for duplicate keys is used
+                .associateBy { it.identifier }
         } catch (e: Exception) {
             logger.warn("Failed to collect annotation and structure information about tests", e)
             emptyMap()
@@ -335,9 +359,9 @@ class JUnitTestCaseProvider(
     }
 
     private class CollectedInfo(
-            val device: AndroidDevice,
-            val hasOnDeviceLibrary: Boolean,
-            val tests: Set<TestIdentifier>,
-            val infoMessages: Map<TestIdentifier, TestInfo>
+        val device: AndroidDevice,
+        val hasOnDeviceLibrary: Boolean,
+        val tests: Set<TestIdentifier>,
+        val infoMessages: Map<TestIdentifier, TestInfo>
     )
 }

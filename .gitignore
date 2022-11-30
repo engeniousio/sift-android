@@ -32,3 +32,5 @@ config.json
 /shapely_reports/
 /ci/
 /local.properties
+/shapely_apks_new/
+/shapely_reports_orchestrator/

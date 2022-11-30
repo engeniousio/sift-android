@@ -34,6 +34,6 @@ public class EveryoneGetsAPoolLoader implements DevicePoolLoader {
             Pool pool = aDevicePool().addDevice(device).withName(device.getSerial()).build();
             pools.add(pool);
         }
-		return pools;
+        return pools;
 	}
 }

@@ -53,7 +53,7 @@ public class AndroidInstrumentedTestRun {
                                       List<? extends ITestRunListener> testRunListeners,
                                       IResultProducer resultProducer,
                                       IRemoteAndroidTestRunnerFactory remoteAndroidTestRunnerFactory) {
-        this.poolName = poolName;
+		this.poolName = poolName;
 		this.testRunParameters = testRunParameters;
 		this.testRunListeners = testRunListeners;
 		this.resultProducer = resultProducer;

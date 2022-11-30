@@ -47,6 +47,6 @@ public class DefaultAndTabletDevicePoolLoader implements DevicePoolLoader {
         }
         defaultPoolBuilder.addIfNotEmpty(pools);
         tabletPoolBuilder.addIfNotEmpty(pools);
-		return pools;
+        return pools;
 	}
 }

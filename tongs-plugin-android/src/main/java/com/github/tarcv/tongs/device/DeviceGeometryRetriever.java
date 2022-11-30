@@ -43,7 +43,7 @@ public class DeviceGeometryRetriever {
 				return geometry;
 			}
 		}
-        logger.warn("No geometry found for {} ({})", device.getName(), device.getSerialNumber());
+		logger.warn("No geometry found for {} ({})", device.getName(), device.getSerialNumber());
 		return null;
 	}
 }

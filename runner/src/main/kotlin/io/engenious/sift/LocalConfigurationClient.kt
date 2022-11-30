@@ -1,6 +1,7 @@
 package io.engenious.sift
 
 import io.engenious.sift.run.ResultData
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -16,9 +17,11 @@ class LocalConfigurationClient(configPath: String) : Client {
         private val logger: Logger = LoggerFactory.getLogger(LocalConfigurationClient::class.java)
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private val configuration by lazy {
         jsonReader.decodeFromString<Config>(File(configPath).readText())
     }
+    @OptIn(ExperimentalSerializationApi::class)
     private val testList by lazy {
         jsonReader.decodeFromString<TestList>(File(configPath).readText())
     }

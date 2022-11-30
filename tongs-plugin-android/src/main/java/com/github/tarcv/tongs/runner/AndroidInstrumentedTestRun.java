@@ -10,6 +10,8 @@
  */
 package com.github.tarcv.tongs.runner;
 
+import static java.lang.String.format;
+
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
@@ -23,17 +25,17 @@ import com.github.tarcv.tongs.runner.listeners.IResultProducer;
 import com.github.tarcv.tongs.runner.listeners.RunListenerAdapter;
 import com.github.tarcv.tongs.system.io.RemoteFileManager;
 import com.google.common.base.Strings;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
+import javax.annotation.Nullable;
 
 public class AndroidInstrumentedTestRun {
 	private static final Logger logger = LoggerFactory.getLogger(AndroidInstrumentedTestRun.class);
@@ -51,7 +53,7 @@ public class AndroidInstrumentedTestRun {
                                       List<? extends ITestRunListener> testRunListeners,
                                       IResultProducer resultProducer,
                                       IRemoteAndroidTestRunnerFactory remoteAndroidTestRunnerFactory) {
-        this.poolName = poolName;
+		this.poolName = poolName;
 		this.testRunParameters = testRunParameters;
 		this.testRunListeners = testRunListeners;
 		this.resultProducer = resultProducer;
@@ -62,6 +64,8 @@ public class AndroidInstrumentedTestRun {
 		final String testPackage = testRunParameters.getTestPackage();
 		final IDevice device = testRunParameters.getDeviceInterface();
 
+		logger.info("LIST execute testPackage {}", testPackage);
+		logger.info("LIST execute device {}", device);
 		final RemoteAndroidTestRunner runner =
 				remoteAndroidTestRunnerFactory.createRemoteAndroidTestRunner(testPackage, testRunParameters.getTestRunner(), device);
 
@@ -73,6 +77,7 @@ public class AndroidInstrumentedTestRun {
 		final String testClassName;
 		final String testMethodName;
 		final String specialFilter;
+		logger.info("LIST execute test {}", test);
 		if (test != null) {
 			final TestCase testCase = test.getTestCase();
 			testClassName = test.getTestClass();

@@ -19,7 +19,6 @@ import android.util.Base64;
 import org.junit.runner.Description;
 import org.junit.runner.manipulation.Filter;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 public class ClassMethodFilter extends Filter {

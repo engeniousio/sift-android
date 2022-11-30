@@ -36,7 +36,7 @@ public class ScreenshotOnFailureRule extends TestWatcher {
         try {
             Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
 
-            @SuppressWarnings("deprecation")
+//            @SuppressWarnings("deprecation")
             File screenFile = new File(Environment.getExternalStorageDirectory(), SCREENSHOT_FILE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 // Filesystem access for shell commands is not limited on Android 9+,

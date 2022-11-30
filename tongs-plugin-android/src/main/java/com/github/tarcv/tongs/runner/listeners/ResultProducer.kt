@@ -41,37 +41,63 @@ interface IResultProducer {
     fun getResult(): TestCaseRunResult
 }
 
-class TestCollectorResultProducer(private val pool: Pool, private val device: AndroidDevice): IResultProducer {
+class TestCollectorResultProducer(private val pool: Pool, private val device: AndroidDevice) :
+    IResultProducer {
     override fun requestListeners(): List<RunListener> = emptyList()
 
     override fun getResult(): TestCaseRunResult {
         return TestCaseRunResult(
-                pool, device, TestCase(TEST_TYPE_TAG, "dummy", "dummy.Dummy", "dummy", listOf("dummy"), includedDevices = null),
-                ResultStatus.PASS, emptyList(),
-                Instant.now(), Instant.now(), Instant.now(), Instant.now(),
-                0,
-                emptyMap(), null, emptyList()
+            pool,
+            device,
+            TestCase(
+                TEST_TYPE_TAG,
+                "dummy",
+                "dummy.Dummy",
+                "dummy",
+                listOf("dummy"),
+                includedDevices = null
+            ),
+            ResultStatus.PASS,
+            emptyList(),
+            Instant.now(),
+            Instant.now(),
+            Instant.now(),
+            Instant.now(),
+            0,
+            emptyMap(),
+            null,
+            emptyList()
         )
     }
 
 }
 
 class ResultProducer(
-        private val context: AndroidRunContext
+    private val context: AndroidRunContext
 ) : IResultProducer {
     private val androidDevice = context.device
     private val resultListener = ResultListener(context.testCaseEvent.testCase.toString())
-    private val logCatListener = LogCatTestRunListener(gson(), context.fileManager, context.pool, androidDevice,
-            context.testCaseEvent.testCase)
-    private val screenTraceListener = getScreenTraceTestRunListener(context.fileManager, androidDevice)
-    private val coverageListener = getCoverageTestRunListener(context.configuration, androidDevice, context.fileManager, context.pool, context.testCaseEvent)
+    private val logCatListener = LogCatTestRunListener(
+        gson(), context.fileManager, context.pool, androidDevice,
+        context.testCaseEvent.testCase
+    )
+    private val screenTraceListener =
+        getScreenTraceTestRunListener(context.fileManager, androidDevice)
+    private val coverageListener = getCoverageTestRunListener(
+        context.configuration,
+        androidDevice,
+        context.fileManager,
+        context.pool,
+        context.testCaseEvent
+    )
 
     override fun requestListeners(): List<RunListener> {
         return listOf(
-                resultListener,
-                logCatListener,
-                screenTraceListener,
-                coverageListener)
+            resultListener,
+            logCatListener,
+            screenTraceListener,
+            coverageListener
+        )
     }
 
     override fun getResult(): TestCaseRunResult {
@@ -79,17 +105,17 @@ class ResultProducer(
 
         val gson = gson()
         val reportBlocks = listOfNotNull(
-                addOutput(shellResult.output),
-                addTraceReport(screenTraceListener),
-                FileTableReportData("Logcat", logCatListener.tableFile, { tableFile ->
-                    tableFile
-                            .bufferedReader(Charsets.UTF_8)
-                            .use { reader ->
-                                gson.fromJson(reader, Table.TableJson::class.java)
-                            }
-                }),
-                LinkedFileReportData("Logcat", logCatListener.rawFile),
-                LinkedFileReportData("Logcat as JSON", logCatListener.tableFile)
+            addOutput(shellResult.output),
+            addTraceReport(screenTraceListener),
+            FileTableReportData("Logcat", logCatListener.tableFile) { tableFile ->
+                tableFile
+                    .bufferedReader(Charsets.UTF_8)
+                    .use { reader ->
+                        gson.fromJson(reader, Table.TableJson::class.java)
+                    }
+            },
+            LinkedFileReportData("Logcat", logCatListener.rawFile),
+            LinkedFileReportData("Logcat as JSON", logCatListener.tableFile)
         )
 
         val coverageReport = if (coverageListener is CoverageListener) {
@@ -100,25 +126,27 @@ class ResultProducer(
 
         val stackTrace = if (shellResult.status == null) {
             StackTrace(
-                    "RunError", "Failed to get the test result",
-                    "Failed to get the test result" + (System.lineSeparator().repeat(2)) + shellResult.trace
+                "RunError", "Failed to get the test result",
+                "Failed to get the test result" + (System.lineSeparator()
+                    .repeat(2)) + shellResult.trace
             )
         } else {
             parseJavaTrace(shellResult.trace)
         }
         return TestCaseRunResult(
-                context.pool, androidDevice,
-                context.testCaseEvent.testCase,
-                shellResult.status ?: ResultStatus.ERROR,
-                listOf(stackTrace),
-                Instant.EPOCH,
-                Instant.EPOCH,
-                Instant.ofEpochMilli(shellResult.startTime ?: 0),
-                Instant.ofEpochMilli(shellResult.endTime ?: 0),
-                0, // TODO
-                shellResult.metrics,
-                coverageReport,
-                reportBlocks)
+            context.pool, androidDevice,
+            context.testCaseEvent.testCase,
+            shellResult.status ?: ResultStatus.ERROR,
+            listOf(stackTrace),
+            Instant.EPOCH,
+            Instant.EPOCH,
+            Instant.ofEpochMilli(shellResult.startTime ?: 0),
+            Instant.ofEpochMilli(shellResult.endTime ?: 0),
+            0, // TODO
+            shellResult.metrics,
+            coverageReport,
+            reportBlocks
+        )
     }
 
     private fun addOutput(output: String): SimpleMonoTextReportData? {
@@ -140,7 +168,10 @@ class ResultProducer(
         }
     }
 
-    private fun getScreenTraceTestRunListener(fileManager: TestCaseFileManager, device: AndroidDevice): RunListener {
+    private fun getScreenTraceTestRunListener(
+        fileManager: TestCaseFileManager,
+        device: AndroidDevice
+    ): RunListener {
         return if (Diagnostics.VIDEO == device.supportedVisualDiagnostics) {
             ScreenRecorderTestRunListener(fileManager, device)
         } else if (Diagnostics.SCREENSHOTS == device.supportedVisualDiagnostics && context.configuration.canFallbackToScreenshots()) {
@@ -150,11 +181,13 @@ class ResultProducer(
         }
     }
 
-    private fun getCoverageTestRunListener(configuration: TongsConfiguration,
-                                           device: AndroidDevice,
-                                           fileManager: TestCaseFileManager,
-                                           pool: Pool,
-                                           testCase: TestCaseEvent): RunListener {
+    private fun getCoverageTestRunListener(
+        configuration: TongsConfiguration,
+        device: AndroidDevice,
+        fileManager: TestCaseFileManager,
+        pool: Pool,
+        testCase: TestCaseEvent
+    ): RunListener {
         return if (configuration.isCoverageEnabled) {
             CoverageListener(device, fileManager, pool, testCase)
         } else {

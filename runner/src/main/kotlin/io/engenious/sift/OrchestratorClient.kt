@@ -141,7 +141,7 @@ open class OrchestratorClient(private val token: String, allowInsecureTls: Boole
             .run(client)
     }
 
-    override fun getEnabledTests(testPlan: String, status: Config.TestStatus): Map<TestIdentifier, Int> {
+    override fun getEnabledTests(testPlan: String, status: Config.TestStatus, allTests: MutableSet<TestIdentifier>): Map<TestIdentifier, Int> {
         // TODO: implement retry
         val request = Request(Method.GET, "$baseUrl/v1/sift")
             .header("token", token)

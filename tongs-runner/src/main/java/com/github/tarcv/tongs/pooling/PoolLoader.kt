@@ -63,7 +63,6 @@ class PoolLoader(private val configuration: Configuration, private val devicePro
         private val logger = LoggerFactory.getLogger(PoolLoader::class.java)
 
         private fun log(configuredPools: Collection<Pool>) {
-            logger.info("Number of device pools: " + configuredPools.size)
             for (pool in configuredPools) {
                 logger.debug(pool.toString())
             }

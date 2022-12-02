@@ -53,7 +53,7 @@ data class TestCase @JvmOverloads constructor( // TODO: consider splitting into 
      */
     // TODO: update to include typeTag
     override fun toString(): String {
-        return "$testClass#$testMethod"
+        return "$testPackage/${testClass.removePrefix("$testPackage.")}#$testMethod"
     }
 
     override fun equals(other: Any?): Boolean {

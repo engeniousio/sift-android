@@ -287,25 +287,19 @@ abstract class Sift : Runnable {
     object Run : Sift() {
         override fun run() {
             val centralConfig: Config.WithInjectedCentralNodeVars = requestConfig()
-            logger.info("RUN centralConfig $centralConfig")
             val siftClient by lazy {
                 options.createClient()
             }
-            logger.info("RUN siftClient $siftClient")
             val deviceRule = RemoteNodeDevicePlugin(
                 centralConfig.withNodes(nodes = centralConfig.nodes.filterNot(::isLocalhostNode))
             )
-            logger.info("RUN deviceRule $deviceRule")
             val remoteDeviceSerials = deviceRule.connect()
                 .map { it.serial }
-            logger.info("RUN remoteDeviceSerials $remoteDeviceSerials")
             conveyor
                 .prepare(
                     {
                         val resolvedConfig = centralConfig.injectLocalNodeVars()
                         val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
-                        logger.info("RUN resolvedConfig $resolvedConfig")
-                        logger.info("RUN thisNodeConfig $thisNodeConfig")
                         setupCommonTongsConfiguration(resolvedConfig)
                             .apply {
                                 if (thisNodeConfig != null) {
@@ -326,7 +320,8 @@ abstract class Sift : Runnable {
                     },
                     TestCaseCollectingPlugin,
                     { allTests, ctx ->
-                        logger.info("RUN allTests $allTests")
+                        logger.info("RUN allTests size - ${allTests.size}")
+                        logger.info("RUN allTests - $allTests")
                         if (allTests.isEmpty()) {
                             ctx.throwDeferred(RuntimeException("No tests were found in the test APK"))
                             return@prepare RunData(noRunId, emptyMap())
@@ -334,28 +329,24 @@ abstract class Sift : Runnable {
 
                         siftClient.run {
                             postTests(allTests)
-                            val enabledTests = getEnabledTests(options.testPlan, options.status)
+                            val enabledTests = getEnabledTests(options.testPlan, options.status, allTests)
                             val runId = createRun(options.testPlan)
-                            logger.info("RUN enabledTests $enabledTests")
-                            logger.info("RUN runId $runId")
+                            logger.info("RUN enabledTests size - ${enabledTests.size}")
+                            logger.info("RUN enabledTests - $enabledTests")
                             RunData(runId, enabledTests)
                         }
                     },
                     FilteringTestCasePlugin,
                     ResultCollectingPlugin(),
                     { result, ctx ->
-                        logger.info("RUN ResultCollectingPlugin result.runId ${result.runId} noRunId $noRunId")
                         if (result.runId == noRunId) {
                             return@prepare
                         }
 
-                        logger.info("RUN ResultCollectingPlugin result.results.isEmpty() ${result.results.isEmpty()}")
                         if (result.results.isEmpty()) {
                             ctx.throwDeferred(RuntimeException("The run produced no results"))
                             return@prepare
                         }
-                        logger.info("RUN postResults testPlan ${options.testPlan}")
-                        logger.info("RUN postResults result $result")
                         siftClient.postResults(options.testPlan, result)
                     }
                 )
@@ -369,7 +360,6 @@ abstract class Sift : Runnable {
                             else -> 1
                         }
                     }
-                    logger.info("RUN exitCode $exitCode")
                     exitProcess(exitCode)
                 }
         }

@@ -272,11 +272,6 @@ class JUnitTestCaseProvider(
     private suspend fun collectTestsFromLogOnlyRun(device: AndroidDevice): CollectedInfo {
         var hasOnDeviceLibrary = true
         var collectionResult = collectTestData(device, hasOnDeviceLibrary)
-        logger.info("LIST collectionResult ${collectionResult.second}")
-        logger.info("LIST logCatMessages ${collectionResult.first}")
-        collectionResult.first.forEach {
-            logger.info("LIST logCatMessage ${it.message}")
-        }
         collectionResult.second.let {
             if (it is TestCollectingListener.Result.Failed) {
                 logger.warn(
@@ -319,19 +314,13 @@ class JUnitTestCaseProvider(
         val testRun = testRunFactory.createCollectingRun(
             device, context.pool, testCollectingListener, withOnDeviceLib
         )
-        logger.info("LIST createCollectingRun")
         try {
             clearLogcat(device.deviceInterface)
             logCatCollector.start(this@JUnitTestCaseProvider.javaClass.simpleName)
-            logger.info("LIST logCatCollector start")
             testRun.execute()
 
             delay(logcatWaiterSleep) // make sure all logcat messages are read
             logCatCollector.stop()
-            logger.info("LIST logCatCollector stop")
-            logCatCollector.messages.forEach {
-                logger.info("LIST logCatCollector message ${it.message}")
-            }
             Pair(
                 logCatCollector.messages
                     .filter { logCatMessage -> "Tongs.TestInfo" == logCatMessage.header.tag },

@@ -63,9 +63,6 @@ public class AndroidInstrumentedTestRun {
 	public TestCaseRunResult execute() {
 		final String testPackage = testRunParameters.getTestPackage();
 		final IDevice device = testRunParameters.getDeviceInterface();
-
-		logger.info("LIST execute testPackage {}", testPackage);
-		logger.info("LIST execute device {}", device);
 		final RemoteAndroidTestRunner runner =
 				remoteAndroidTestRunnerFactory.createRemoteAndroidTestRunner(testPackage, testRunParameters.getTestRunner(), device);
 
@@ -77,7 +74,6 @@ public class AndroidInstrumentedTestRun {
 		final String testClassName;
 		final String testMethodName;
 		final String specialFilter;
-		logger.info("LIST execute test {}", test);
 		if (test != null) {
 			final TestCase testCase = test.getTestCase();
 			testClassName = test.getTestClass();

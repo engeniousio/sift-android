@@ -79,8 +79,6 @@ public class AndroidTestRunFactory {
                 device,
                 configuration,
                 withOnDeviceLib);
-        logger.info("LIST createCollectingRun testRunParameters {}", testRunParameters);
-        logger.info("LIST createCollectingRun testCase {}", testRunParameters.getTest());
         List<ITestRunListener> testRunListeners = new ArrayList<>();
         testRunListeners.add(testCollectingListener);
 

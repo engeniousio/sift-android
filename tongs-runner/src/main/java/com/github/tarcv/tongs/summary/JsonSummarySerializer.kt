@@ -12,21 +12,12 @@ package com.github.tarcv.tongs.summary
 
 import com.github.tarcv.tongs.system.io.FileManager
 import com.google.gson.Gson
-import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
 import java.io.IOException
 
 class JsonSummarySerializer(private val fileManager: FileManager, private val gson: Gson) : SummaryPrinter {
     override fun print(summary: Summary) {
         try {
-            logger.info("summary title ${summary.title}")
-            logger.info("summary subtitle ${summary.subtitle}")
-            logger.info("summary allTests ${summary.allTests}")
-            logger.info("summary poolSummaries ${summary.poolSummaries}")
-            logger.info("summary failedTests ${summary.failedTests}")
-            logger.info("summary flakyTests ${summary.flakyTests}")
-            logger.info("summary fatalCrashedTests ${summary.fatalCrashedTests}")
-            logger.info("summary ignoredTests ${summary.ignoredTests}")
             fileManager.createSummaryFile()
                     .bufferedWriter(Charsets.UTF_8)
                     .use { writer ->

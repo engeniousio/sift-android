@@ -57,7 +57,22 @@ data class TestIdentifier(
 
     companion object {
         fun fromString(str: String): TestIdentifier {
-            return Regex("(.+)/(.+)#(.+)")
+            return Regex("([*])/([*])") /** All tests from apk */
+                .matchEntire(str)
+                ?.destructured
+                ?.let { (packageName, className) ->
+                    TestIdentifier(packageName, className, "*")
+                } ?: Regex("(.+)/([*])") /** All tests from Package */
+                .matchEntire(str)
+                ?.destructured
+                ?.let { (packageName, className) ->
+                    TestIdentifier(packageName, className, "*")
+                } ?: Regex("(.+)/(.+)#(.+)")  /** All tests from Class */
+                .matchEntire(str)
+                ?.destructured
+                ?.let { (packageName, className, methodName) ->
+                    TestIdentifier(packageName, className, methodName)
+                } ?: Regex("(.+)/(.+)#(.+)")  /** One test from Class */
                 .matchEntire(str)
                 ?.destructured
                 ?.let { (packageName, className, methodName) ->
@@ -65,10 +80,42 @@ data class TestIdentifier(
                 }
                 ?: throw RuntimeException("Invalid test identifier format: $str")
         }
+
+        fun getTestType(strTestIdentifier: String): TestIdentifierType {
+            return Regex("([*])/([*])")
+                .matchEntire(strTestIdentifier)
+                ?.let {
+                    TestIdentifierType.ALL
+                }
+                ?: Regex("(.+)/([*])")
+                    .matchEntire(strTestIdentifier)
+                    ?.let {
+                        TestIdentifierType.PACKAGE
+                    }
+                ?: Regex("(.+)/(.+)#([*])")
+                    .matchEntire(strTestIdentifier)
+                    ?.let {
+                        TestIdentifierType.CLASS
+                    }
+                ?: Regex("(.+)/(.+)#(.+)")
+                .matchEntire(strTestIdentifier)
+                ?.let {
+                    TestIdentifierType.TEST
+                }
+                ?: throw RuntimeException("Invalid test identifier format: $strTestIdentifier")
+        }
+
         fun fromTestCase(testCase: TestCase): TestIdentifier {
             val `package` = testCase.testPackage
             val `class` = testCase.testClass.removePrefix("$`package`.")
             return TestIdentifier(`package`, `class`, testCase.testMethod)
         }
     }
+}
+
+enum class TestIdentifierType {
+    TEST,
+    CLASS,
+    PACKAGE,
+    ALL
 }

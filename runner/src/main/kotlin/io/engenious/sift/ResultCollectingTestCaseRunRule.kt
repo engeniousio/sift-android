@@ -13,6 +13,7 @@ import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
 import com.github.tarcv.tongs.system.adb.CollectingShellOutputReceiver
 import io.engenious.sift.run.ResultData
 import io.engenious.sift.run.RunData
+import org.apache.sshd.server.Environment
 import java.io.File
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -67,8 +68,6 @@ open class ResultCollectingTestCaseRunRule(
             null
         }
 
-        logger.info("RUN after test key $key")
-        logger.info("RUN after test arguments ${arguments.result}")
         testResults[testIdentifier] = FilledTestResult(
             key,
             Result.fromTestCaseRunResult(arguments.result, screenshot)
@@ -92,10 +91,11 @@ open class ResultCollectingTestCaseRunRule(
             ScreenshotFileType,
             nameSuffix
         )
+        logger.info("RUN pullScreenshot localFile $localFile")
         deviceInterface.apply {
             pullFile(screenshotPath, localFile.create().absolutePath)
         }
-        logger.info("RUN pullScreenshot localFile $localFile")
+        logger.info("RUN pullScreenshot pullFile done")
         localFile
     } catch (e: Exception) {
         System.err.println("Failed to pull the failure screenshot $screenshotPath:") // TODO: convert to log call

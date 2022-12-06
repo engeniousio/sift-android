@@ -15,6 +15,7 @@ Sift file will be created after `./gradlew installDist` in `runner/build/install
 3. Add Node (host local ip - `"host": "127.0.0.1"`, UDID - devices (from AndroidStudio Terminal `./gradlew adb devices` e.g. `"devices": ["emulator-5554"]` ))
 4. Add Android SDK path MAC - `"androidSdkPath": "/Users/user/Library/Android/sdk"`
 5. Add test list `"tests": ["io.package.app.screentests/StartScreenTests#testStartScreenLightThemeDisplay", "io.package.app.screentests/StartScreenTests#testStartScreenDarkThemeDisplay", "io.package.app.screentests/StartScreenTests#testStartScreenGetStartClick"]`. Test names can get from `list` command
+
 - `io.package.app.screentests/StartScreenTests#testStartScreenGetStartClick` - one test
 - `io.package.app.screentests/StartScreenTests#*` - all tests from one Class
 - `io.package.app.screentests/*` - all tests from one Package

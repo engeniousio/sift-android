@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tongs Execution</title>
+        <link href="http://fonts.googleapis.com/css?family=Roboto:regular,medium,thin,italic,mediumitalic,bold" rel="stylesheet">
+        <link href="static/bootstrap.min.css" rel="stylesheet">
+        <link href="static/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="static/spoon.css" rel="stylesheet">
+        <link href="static/tongs.css" rel="stylesheet">
+        <script src="static/jquery.min.js"></script>
+        <script src="static/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="hero-unit {{overallStatus}}">
+                <h1>{{title}}</h1>
+                <p><a href="index.html" target="_top">{{subtitle}}</a></p>
+            </div>
+            <div class="row">
+                <div class="span12">
+                    <table class="birds-eye">
+                        <tbody>
+                            {{#pools}}
+                            <tr class="device">
+                                <th colspan="{{size testResults}}">
+                                	<a href="pools/{{poolName}}.html">{{titleize poolName}}</a>
+                                </th>
+                            </tr>
+                            <tr class="result">
+                                {{#testResults}}
+                                <td class="test {{lower status}}">
+                                    <a href="pools/{{poolName}}/{{filenameForTest .}}html" id="testMethod" data-original-title="{{simpleClassName testCase.testClass}}" data-content="{{readableMethodName testCase.testMethod}} ({{replace device.modelName ' ' '_'}}) [{{device.serial}}]">&nbsp;</a>
+                                </td>
+                                {{/testResults}}
+                            </tr>
+                            {{/pools}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        Flaky tests (eventually passed but some run attempts failed):
+        <ul>
+            {{#flakyTests}}
+            <li>{{totalFailureCount}} times {{testCase.testClass}}#{{testCase.testMethod}} on {{pool.name}}</li>
+            {{/flakyTests}}
+            {{^flakyTests}}
+            <li>None.</li>
+            {{/flakyTests}}
+        </ul>
+
+        Ignored tests:
+        <ul>
+            {{#ignoredTests}}
+            <li>{{testCase.testClass}}#{{testCase.testMethod}} on {{pool.name}}</li>
+            {{/ignoredTests}}
+            {{^ignoredTests}}
+            <li>None.</li>
+            {{/ignoredTests}}
+        </ul>
+
+        Failed tests:
+        <ul>
+            {{#failedTests}}
+            <li>{{totalFailureCount}} times {{testCase.testClass}}#{{testCase.testMethod}} on {{pool.name}}</li>
+            {{/failedTests}}
+            {{^failedTests}}
+            <li>None.</li>
+            {{/failedTests}}
+        </ul>
+
+        Fatal crashed tests:
+        <ul>
+            {{#fatalErrors}}
+            <li>{{.}}</li>
+            {{/fatalErrors}}
+            {{#fatalCrashedTests}}
+            <li>{{testCase.testClass}}#{{testCase.testMethod}} on {{pool.name}}</li>
+            {{/fatalCrashedTests}}
+            {{^fatalCrashedTests}}{{^fatalErrors}}
+            <li>None.</li>
+            {{/fatalErrors}}{{/fatalCrashedTests}}
+        </ul>
+
+        <script type="text/javascript">
+            $('.test a').popover({
+                placement: 'top',
+                trigger: 'hover'
+            });
+        </script>
+    </body>
+</html>

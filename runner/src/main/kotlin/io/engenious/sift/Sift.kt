@@ -40,7 +40,8 @@ import java.nio.file.Files
 import java.util.Locale
 import kotlin.system.exitProcess
 
-object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed across nodes and devices") {
+object SiftMain :
+    CliktCommand(name = "sift", help = "Run tests distributed across nodes and devices") {
     val mode by argument().enumWithHelp<Mode>("Where to get the run configuration from")
     val command by argument().enumWithHelp<Command>("Command to execute")
     val localConfigurationOptions by ConfigurationGroup().cooccurring()
@@ -92,6 +93,7 @@ object SiftMain : CliktCommand(name = "sift", help = "Run tests distributed acro
 
         override fun toString(): String = help
     }
+
     enum class Command(private val help: String) {
         INIT("Initialize Orchestrator with the list of available tests (or add newly added ones)"),
         LIST("Print all available tests"),
@@ -117,16 +119,18 @@ class ConfigurationGroup : OptionGroup("Local configuration specific options"), 
 
     override fun createClient(): Client = LocalConfigurationClient(this.config)
 }
+
 class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientProvider {
     val token by option(help = "Orchestrator token for Android. It can be viewed on Global Settings page").required()
     override val testPlan by option(help = "Orchestrator test plan name").default("default_android_plan")
     override val status by option(help = "Filter tests by status in Orchestrator (default: 'enabled')")
-        .enum<Config.TestStatus> { it.name.toLowerCase(Locale.ROOT) }
+        .enum<Config.TestStatus> { it.name.lowercase(Locale.ROOT) }
         .default(Config.TestStatus.ENABLED)
 
     val initSdk: String? by option(help = "Path to Android SDK for 'init' subcommand")
-    val initSdkMissingError = "Please specify path to Android SDK with '--init-sdk' command-line option" +
-        " or ANDROID_SDK_ROOT/ANDROID_HOME environment variable"
+    val initSdkMissingError =
+        "Please specify path to Android SDK with '--init-sdk' command-line option" +
+                " or ANDROID_SDK_ROOT/ANDROID_HOME environment variable"
 
     val allowInsecureTls by option(hidden = true).flag(default = false)
         .help("USE FOR DEBUGGING ONLY, disable protection from Man-in-the-middle(MITM) attacks")
@@ -146,7 +150,7 @@ class OrchestratorGroup : OptionGroup("Orchestrator specific options"), ClientPr
 }
 
 private inline fun <reified T : Enum<T>> RawArgument.enumWithHelp(message: String): ProcessedArgument<T, T> {
-    val converter: (T) -> String = { it.name.toLowerCase(Locale.ROOT) }
+    val converter: (T) -> String = { it.name.lowercase(Locale.ROOT) }
     val maxLength = T::class.java.enumConstants.maxOf { converter(it).length }
     val choicesHelp = T::class.java.enumConstants
         .filterNot { it.toString().isBlank() }
@@ -172,8 +176,11 @@ abstract class Sift : Runnable {
     object List : Sift() {
         override fun run() {
             val centralConfig = requestConfig()
+            logger.info("LIST centralConfig $centralConfig")
             val resolvedConfig = centralConfig.injectLocalNodeVars()
+            logger.info("LIST resolvedConfig $resolvedConfig")
             val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
+            logger.info("LIST thisNodeConfig $thisNodeConfig")
 
             val tongsConfiguration = Configuration.Builder()
                 .setupCommonTongsConfiguration(resolvedConfig)
@@ -189,6 +196,7 @@ abstract class Sift : Runnable {
                 .withPlugins(listOf(ListingPlugin::class.java.canonicalName))
                 .build(true)
 
+            logger.info("LIST tongsConfiguration $tongsConfiguration")
             handleCommonErrors {
                 try {
                     Tongs(tongsConfiguration).run(allowThrows = true)
@@ -279,11 +287,9 @@ abstract class Sift : Runnable {
     object Run : Sift() {
         override fun run() {
             val centralConfig: Config.WithInjectedCentralNodeVars = requestConfig()
-
             val siftClient by lazy {
                 options.createClient()
             }
-
             val deviceRule = RemoteNodeDevicePlugin(
                 centralConfig.withNodes(nodes = centralConfig.nodes.filterNot(::isLocalhostNode))
             )
@@ -294,7 +300,6 @@ abstract class Sift : Runnable {
                     {
                         val resolvedConfig = centralConfig.injectLocalNodeVars()
                         val thisNodeConfig = resolvedConfig.nodes.singleLocalNode()
-
                         setupCommonTongsConfiguration(resolvedConfig)
                             .apply {
                                 if (thisNodeConfig != null) {
@@ -304,12 +309,19 @@ abstract class Sift : Runnable {
                                 }
                             }
 
-                        withPoolingStrategy(nodeDevicesStrategy(thisNodeConfig, remoteDeviceSerials))
+                        withPoolingStrategy(
+                            nodeDevicesStrategy(
+                                thisNodeConfig,
+                                remoteDeviceSerials
+                            )
+                        )
                         withTitle(centralConfig.reportTitle)
                         withSubtitle(centralConfig.reportSubtitle)
                     },
                     TestCaseCollectingPlugin,
                     { allTests, ctx ->
+                        logger.info("RUN allTests size - ${allTests.size}")
+                        logger.info("RUN allTests - $allTests")
                         if (allTests.isEmpty()) {
                             ctx.throwDeferred(RuntimeException("No tests were found in the test APK"))
                             return@prepare RunData(noRunId, emptyMap())
@@ -317,8 +329,10 @@ abstract class Sift : Runnable {
 
                         siftClient.run {
                             postTests(allTests)
-                            val enabledTests = getEnabledTests(options.testPlan, options.status)
+                            val enabledTests = getEnabledTests(options.testPlan, options.status, allTests)
                             val runId = createRun(options.testPlan)
+                            logger.info("RUN enabledTests size - ${enabledTests.size}")
+                            logger.info("RUN enabledTests - $enabledTests")
                             RunData(runId, enabledTests)
                         }
                     },
@@ -382,11 +396,16 @@ fun nodeDevicesStrategy(
         manual = ManualPooling().apply {
             groupings = mapOf(
                 siftPoolName to (
-                    thisNodeConfiguration
-                        ?.UDID
-                        ?.devices
-                        ?: emptyList()
-                    ) + additionalSerials
+                        thisNodeConfiguration
+                            ?.UDID
+                            ?.devices
+                            ?: emptyList()
+                        ) + (
+                        thisNodeConfiguration
+                            ?.UDID
+                            ?.simulators
+                            ?: emptyList()
+                        ) + additionalSerials
             )
         }
     }

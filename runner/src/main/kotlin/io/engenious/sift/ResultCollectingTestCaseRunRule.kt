@@ -13,7 +13,10 @@ import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
 import com.github.tarcv.tongs.system.adb.CollectingShellOutputReceiver
 import io.engenious.sift.run.ResultData
 import io.engenious.sift.run.RunData
+import org.apache.sshd.server.Environment
 import java.io.File
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class ResultCollectingPlugin :
     Conveyor.Plugin<RunData, ResultData>(), TestCaseRunRuleFactory<TestCaseRunRule> {
@@ -36,12 +39,17 @@ open class ResultCollectingTestCaseRunRule(
     private val screenshotDataName = "Failure screenshot"
     private val device = context.device.deviceInterface as? IDevice
 
+    companion object {
+        private val logger: Logger = LoggerFactory.getLogger(ResultCollectingPlugin::class.java)
+    }
+
     override fun after(arguments: TestCaseRunRuleAfterArguments) {
         val testIdentifier = TestIdentifier.fromTestCase(arguments.result.testCase)
         val key = identifierToIdMapping[testIdentifier]
             ?: throw IllegalStateException("Orchestrator didn't send test id for $testIdentifier")
 
         val status = Status.fromTestCaseRunResult(arguments.result)
+        logger.info("RUN after test status $status")
         val screenshot = if (status == Status.FAILED || status == Status.ERRORED) {
             val attemptIndex = arguments.result.totalFailureCount
 
@@ -78,14 +86,16 @@ open class ResultCollectingTestCaseRunRule(
     }
 
     private fun pullScreenshot(deviceInterface: IDevice, nameSuffix: String) = try {
+        logger.info("RUN pullScreenshot")
         val localFile = context.fileManager.testCaseFile(
             ScreenshotFileType,
             nameSuffix
         )
+        logger.info("RUN pullScreenshot localFile $localFile")
         deviceInterface.apply {
             pullFile(screenshotPath, localFile.create().absolutePath)
         }
-
+        logger.info("RUN pullScreenshot pullFile done")
         localFile
     } catch (e: Exception) {
         System.err.println("Failed to pull the failure screenshot $screenshotPath:") // TODO: convert to log call
@@ -96,11 +106,13 @@ open class ResultCollectingTestCaseRunRule(
     override fun before() {
         device ?: return
         try {
+            logger.info("RUN before executeShellCommand screenshotPath $screenshotPath")
             device.executeShellCommand(
                 "rm $screenshotPath",
                 CollectingShellOutputReceiver()
             )
         } catch (e: Exception) {
+            logger.info("RUN before Failed screenshotPath to remove old screenshot $e")
             System.err.println("Failed to remove old screenshot:") // TODO: convert to log call
             e.printStackTrace(System.err)
         }

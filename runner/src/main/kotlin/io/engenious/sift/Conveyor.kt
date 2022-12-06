@@ -2,12 +2,15 @@ package io.engenious.sift
 
 import com.github.tarcv.tongs.Configuration
 import com.github.tarcv.tongs.Tongs
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 class Conveyor private constructor() {
     companion object {
         val conveyor = Conveyor()
+        val logger: Logger = LoggerFactory.getLogger(Conveyor::class.java)
     }
 
     private val exceptionHolder = AtomicReference<Exception>()
@@ -80,7 +83,12 @@ class Conveyor private constructor() {
 
             conveyor.finalizeAndAdvanceConveyor<Unit>()
             val result = try {
-                Tongs(configuration).run(allowThrows = true)
+                logger.info("RUN Tongs run configuration $configuration")
+                Tongs(configuration).run(allowThrows = false)
+//                Tongs(configuration).run(allowThrows = true)
+//            } catch (e: Exception) {
+//                logger.info("RUN Tongs run Exception $e")
+//                false
             } finally {
                 if (conveyor.queue.isNotEmpty()) {
                     conveyor.finalizeAndAdvanceConveyor<Any>()
@@ -91,8 +99,12 @@ class Conveyor private constructor() {
             }
 
             conveyor.exceptionHolder.get()
-                ?.let { throw it }
+                ?.let {
+                    logger.error("RUN conveyor.exceptionHolder $it")
+                    throw it
+                }
 
+            logger.info("RUN conveyor result $result")
             return result
         }
     }

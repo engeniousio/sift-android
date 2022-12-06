@@ -16,6 +16,11 @@ Sift file will be created after `./gradlew installDist` in `runner/build/install
 4. Add Android SDK path MAC - `"androidSdkPath": "/Users/user/Library/Android/sdk"`
 5. Add test list `"tests": ["io.package.app.screentests/StartScreenTests#testStartScreenLightThemeDisplay", "io.package.app.screentests/StartScreenTests#testStartScreenDarkThemeDisplay", "io.package.app.screentests/StartScreenTests#testStartScreenGetStartClick"]`. Test names can get from `list` command
 
+- `io.package.app.screentests/StartScreenTests#testStartScreenGetStartClick` - one test
+- `io.package.app.screentests/StartScreenTests#*` - all tests from one Class
+- `io.package.app.screentests/*` - all tests from one Package
+- `*/*` - all tests from apk
+
 ### Print all tests from the test APK
 - `sift config list -c config.json`
 
@@ -33,6 +38,11 @@ io.package.app.screentests.StartScreenTests#testStartScreenLightThemeDisplay`
 
 Before add this list to `config.json` file need to change `.` before test class to `/`
 
+## How to use with Orchestrator:
+[Orchestrator docs](https://orchestrator.engenious.io/docs)
+
+[Orchestrator dashboard](https://dashboard.orchestrator.engenious.io/)
+
 ### Example of **config.json** file (JSON format):
 
 ```JSON5
@@ -41,8 +51,8 @@ Before add this list to `config.json` file need to change `.` before test class 
     "testPackage": "path to the test APK (the androidTest one)",
     "outputDirectoryPath": "path to the directory where tests results will be collected",
     "globalRetryLimit": 1, // attempts for retry for all tests in a run
-    "testRetryLimit": 1, // attempts for retry for one test
-    "testsExecutionTimeout": 120, // test timeout
+    "testRetryLimit": 1, // attempts for retry for one test in case of fail
+    "testsExecutionTimeout": 120, // max test timeout
     "setUpScriptPath": "script to execute on a node before each test bucket", // optional (not implemented yet)
     "tearDownScriptPath": "script to execute on a node after each test bucket", // optional (not implemented yet)
     "reportTitle": "Local HTML report title",
@@ -54,17 +64,26 @@ Before add this list to `config.json` file need to change `.` before test class 
             "host": "172.22.22.12", // (not implemented yet)
             "port": 22, // (not implemented yet)
             "username": "node-1", // (not implemented yet)
-            "pathToCertificate": "path to SSH key/certificate", // (not implemented yet)
-            "deploymentPath": "path where all necessary stuff will be stored on the node", // (not implemented yet)
+            "deploymentPath": "path where all necessary stuff will be stored on the node", // deploymentPath used for storing files needed for Orchestrator tests run
             "UDID": {
-                        "devices": ["device serials, this is an optional key"],
-                        "simulators": ["(not supported yet) names of emulators (AVDs) to use for tests, this is an optional key)"]
+                 "devices": ["device serials, this is an optional key"],
+                 "simulators": ["emulators serials, this is an optional key"]
             },
             "androidSdkPath": "path to the Android SDK root directory",
             "environmentVariables": { // additional parameters passed to tests, this is an optional key
                 "env1": "value1"
+            },
+            "authorization": {  // authorization used for connecting Orchestrator to nodes
+                "type": "0", // PrivateKey = '0', PrivateKeyComplex = '1'(not implemented yet), Password = '2'(not implemented yet), Agent = '3'(not implemented yet)
+                "data": {
+                    "username": "",
+                    "password": null,
+                    "privateKey": null, // path to SSH key/certificate
+                    "publicKey": null,
+                    "passphrase": null
+                    }
+                }
             }
-        }
     ],
     "tests": [
         "Identifiers of tests to be included in a test run (use 'sift config list -c config.json' to list test identifiers)"
@@ -77,7 +96,7 @@ Before add this list to `config.json` file need to change `.` before test class 
  - Android SDK
  - Java 8
  - Test APK should have `androidTestImplementation 'io.engenious.sift-android:ondevice:$VERSION'` dependency
-   (or `'com.github.engeniousio.sift-android:ondevice:$VERSION'` for SNAPSHOT versions, at 18.11.22 - `'com.github.engeniousio.sift-android:ondevice:master-SNAPSHOT'`)
+   (or `'com.github.engeniousio.sift-android:ondevice:$VERSION'` for SNAPSHOT versions, at 30.11.22 - `'com.github.engeniousio.sift-android:ondevice:master-SNAPSHOT'`)
   <br/>(optional, add it to run tests with complicated names or use various QoL helpers)
 
 ### How to Build:

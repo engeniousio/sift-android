@@ -1,6 +1,7 @@
 package io.engenious.sift
 
 import com.android.ddmlib.IDevice
+import com.android.ddmlib.IDevice.MNT_EXTERNAL_STORAGE
 import com.github.tarcv.tongs.api.result.FileType
 import com.github.tarcv.tongs.api.result.ImageReportData
 import com.github.tarcv.tongs.api.result.TestCaseFile
@@ -13,10 +14,9 @@ import com.github.tarcv.tongs.api.run.TestCaseRunRuleFactory
 import com.github.tarcv.tongs.system.adb.CollectingShellOutputReceiver
 import io.engenious.sift.run.ResultData
 import io.engenious.sift.run.RunData
-import org.apache.sshd.server.Environment
-import java.io.File
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.File
 
 class ResultCollectingPlugin :
     Conveyor.Plugin<RunData, ResultData>(), TestCaseRunRuleFactory<TestCaseRunRule> {
@@ -35,9 +35,9 @@ open class ResultCollectingTestCaseRunRule(
     private val testResults: MutableMap<TestIdentifier, FilledTestResult>,
     private val context: TestCaseRunRuleContext
 ) : TestCaseRunRule {
-    private val screenshotPath = "/sdcard/failure.png"
-    private val screenshotDataName = "Failure screenshot"
     private val device = context.device.deviceInterface as? IDevice
+    private val screenshotPath = "${device?.getMountPoint(MNT_EXTERNAL_STORAGE)}/failure.png"
+    private val screenshotDataName = "Failure screenshot"
 
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(ResultCollectingPlugin::class.java)
@@ -62,7 +62,9 @@ open class ResultCollectingTestCaseRunRule(
                 arguments.result.data
                     .filterIsInstance<ImageReportData>()
                     .lastOrNull { it.title == screenshotDataName }
-                    ?.let { File(it.imagePath) }
+                    ?.let {
+                        File(it.imagePath)
+                    }
             }
         } else {
             null
@@ -86,19 +88,17 @@ open class ResultCollectingTestCaseRunRule(
     }
 
     private fun pullScreenshot(deviceInterface: IDevice, nameSuffix: String) = try {
-        logger.info("RUN pullScreenshot")
         val localFile = context.fileManager.testCaseFile(
             ScreenshotFileType,
             nameSuffix
         )
-        logger.info("RUN pullScreenshot localFile $localFile")
         deviceInterface.apply {
             pullFile(screenshotPath, localFile.create().absolutePath)
         }
         logger.info("RUN pullScreenshot pullFile done")
         localFile
     } catch (e: Exception) {
-        System.err.println("Failed to pull the failure screenshot $screenshotPath:") // TODO: convert to log call
+        logger.error("Failed to pull the failure screenshot $screenshotPath: ${e.message}") // TODO: convert to log call
         e.printStackTrace(System.err)
         null
     }
@@ -106,14 +106,12 @@ open class ResultCollectingTestCaseRunRule(
     override fun before() {
         device ?: return
         try {
-            logger.info("RUN before executeShellCommand screenshotPath $screenshotPath")
             device.executeShellCommand(
                 "rm $screenshotPath",
                 CollectingShellOutputReceiver()
             )
         } catch (e: Exception) {
-            logger.info("RUN before Failed screenshotPath to remove old screenshot $e")
-            System.err.println("Failed to remove old screenshot:") // TODO: convert to log call
+            logger.error("Failed to remove old screenshot: ${e.message}")
             e.printStackTrace(System.err)
         }
     }

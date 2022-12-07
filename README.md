@@ -25,17 +25,15 @@ Sift file will be created after `./gradlew installDist` in `runner/build/install
 
 Result will be e.g.:
 
-`io.package.app.screentests.ForgotPasswordTests#testEnterRightPassword
-io.package.app.screentests.ForgotPasswordTests#testEnterWrongPassword
-io.package.app.screentests.ForgotPasswordTests#testStopRecoveringPassword
-io.package.app.screentests.ForgotPasswordTests#testUserEmailValidation
-io.package.app.screentests.LoginTests#testLoginLogoutUsingEmailAccount
-io.package.app.screentests.RegistrationTests#testEmailAndPasswordValidation
-io.package.app.screentests.RegistrationTests#testRegistrationSwappingSignInTypeButtons
-io.package.app.screentests.RegistrationTests#testRegistrationWithEmailAndPassword
-io.package.app.screentests.StartScreenTests#testStartScreenLightThemeDisplay`
-
-Before add this list to `config.json` file need to change `.` before test class to `/`
+`io.package.app.screentests/ForgotPasswordTests#testEnterRightPassword
+io.package.app.screentests/ForgotPasswordTests#testEnterWrongPassword
+io.package.app.screentests/ForgotPasswordTests#testStopRecoveringPassword
+io.package.app.screentests/ForgotPasswordTests#testUserEmailValidation
+io.package.app.screentests/LoginTests#testLoginLogoutUsingEmailAccount
+io.package.app.screentests/RegistrationTests#testEmailAndPasswordValidation
+io.package.app.screentests/RegistrationTests#testRegistrationSwappingSignInTypeButtons
+io.package.app.screentests/RegistrationTests#testRegistrationWithEmailAndPassword
+io.package.app.screentests/StartScreenTests#testStartScreenLightThemeDisplay`
 
 ## How to use with Orchestrator:
 [Orchestrator docs](https://orchestrator.engenious.io/docs)

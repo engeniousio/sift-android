@@ -97,6 +97,8 @@ Before add this list to `config.json` file need to change `.` before test class 
  - Test APK should have `androidTestImplementation 'io.engenious.sift-android:ondevice:$VERSION'` dependency
    (or `'com.github.engeniousio.sift-android:ondevice:$VERSION'` for SNAPSHOT versions, at 30.11.22 - `'com.github.engeniousio.sift-android:ondevice:master-SNAPSHOT'`)
   <br/>(optional, add it to run tests with complicated names or use various QoL helpers)
+ - Tests must run with rule - ScreenshotOnFailureRule
+ `import io.engenious.sift.ondevice.ScreenshotOnFailureRule`
 
 ### How to Build:
 - `./gradlew installDist`

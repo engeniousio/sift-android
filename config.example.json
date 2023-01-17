@@ -5,8 +5,6 @@
   "globalRetryLimit": 1,
   "testRetryLimit": 1,
   "testsExecutionTimeout": 120,
-  "setUpScriptPath": "script to execute on a node before each test bucket",
-  "tearDownScriptPath": "script to execute on a node after each test bucket",
   "reportTitle": "Local HTML report title",
   "reportSubtitle": "Local HTML report subtitle, optional",
   "nodes":
@@ -15,16 +13,24 @@
       "name": "Node-1",
       "host": "172.22.22.12",
       "port": 22,
-      "username": "node-1",
-      "pathToCertificate": "path to SSH key/certificate",
       "deploymentPath": "path where all necessary stuff will be stored on the node",
       "UDID": {
         "devices": ["device serials, this is an optional key"],
-        "simulators": ["(not supported yet) names of emulators (AVDs) to use for tests, this is an optional key)"]
+        "simulators": ["names of emulators (AVDs) to use for tests, this is an optional key)"]
       },
       "androidSdkPath": "path to the Android SDK root directory",
       "environmentVariables": {
         "env1": "value1"
+      },
+      "authorization": {
+        "type": "0",
+        "data": {
+          "username": "node machine user name",
+          "password": "password SSH key/certificate",
+          "privateKey": "path to SSH key/certificate",
+          "publicKey": "",
+          "passphrase": "passphrase SSH key/certificate"
+        }
       }
     }
   ],

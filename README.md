@@ -1,4 +1,4 @@
-# sift-android
+# Sift-android
 
 
 ## Sift - Unit and UI Tests Parallelization for the native Espresso test

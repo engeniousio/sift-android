@@ -26,17 +26,15 @@ Sift file will be created after `./gradlew installDist` in `runner/build/install
 
 Result will be e.g.:
 
-`io.package.app.screentests.ForgotPasswordTests#testEnterRightPassword
-io.package.app.screentests.ForgotPasswordTests#testEnterWrongPassword
-io.package.app.screentests.ForgotPasswordTests#testStopRecoveringPassword
-io.package.app.screentests.ForgotPasswordTests#testUserEmailValidation
-io.package.app.screentests.LoginTests#testLoginLogoutUsingEmailAccount
-io.package.app.screentests.RegistrationTests#testEmailAndPasswordValidation
-io.package.app.screentests.RegistrationTests#testRegistrationSwappingSignInTypeButtons
-io.package.app.screentests.RegistrationTests#testRegistrationWithEmailAndPassword
-io.package.app.screentests.StartScreenTests#testStartScreenLightThemeDisplay`
-
-Before add this list to `config.json` file need to change `.` before test class to `/`
+`io.package.app.screentests/ForgotPasswordTests#testEnterRightPassword
+io.package.app.screentests/ForgotPasswordTests#testEnterWrongPassword
+io.package.app.screentests/ForgotPasswordTests#testStopRecoveringPassword
+io.package.app.screentests/ForgotPasswordTests#testUserEmailValidation
+io.package.app.screentests/LoginTests#testLoginLogoutUsingEmailAccount
+io.package.app.screentests/RegistrationTests#testEmailAndPasswordValidation
+io.package.app.screentests/RegistrationTests#testRegistrationSwappingSignInTypeButtons
+io.package.app.screentests/RegistrationTests#testRegistrationWithEmailAndPassword
+io.package.app.screentests/StartScreenTests#testStartScreenLightThemeDisplay`
 
 ## How to use with Orchestrator:
 [Orchestrator docs](https://orchestrator.engenious.io/docs)
@@ -98,6 +96,8 @@ Before add this list to `config.json` file need to change `.` before test class 
  - Test APK should have `androidTestImplementation 'io.engenious.sift-android:ondevice:$VERSION'` dependency
    (or `'com.github.engeniousio.sift-android:ondevice:$VERSION'` for SNAPSHOT versions, at 30.11.22 - `'com.github.engeniousio.sift-android:ondevice:master-SNAPSHOT'`)
   <br/>(optional, add it to run tests with complicated names or use various QoL helpers)
+ - Tests must run with rule - ScreenshotOnFailureRule
+ `import io.engenious.sift.ondevice.ScreenshotOnFailureRule`
 
 ### How to Build:
 - `./gradlew installDist`
